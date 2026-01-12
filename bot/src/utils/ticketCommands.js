@@ -108,7 +108,10 @@ async function handleTicketCommand(message) {
  * $close / $delete - Close the ticket with optional reason
  */
 async function handleClose(message, ticket, reason) {
-  const confirmMsg = await message.reply({
+  // Delete command message
+  await message.delete().catch(() => {});
+
+  const confirmMsg = await message.channel.send({
     embeds: [new EmbedBuilder()
       .setColor(COLORS.warning)
       .setDescription(`Are you sure you want to close this ticket?${reason ? `\n**Reason:** ${reason}` : ''}\n\nReact with ✅ to confirm or ❌ to cancel.`)
@@ -170,11 +173,18 @@ async function handleRename(message, ticket, newName) {
     });
   }
 
-  // Sanitize channel name
-  const sanitized = newName.toLowerCase()
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/-+/g, '-')
-    .substring(0, 90);
+  // Delete the command message immediately
+  await message.delete().catch(() => {});
+
+  // Sanitize channel name - replace spaces with dashes, remove special chars
+  const sanitized = newName
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')           // Replace spaces with dashes
+    .replace(/[^a-z0-9-]/g, '')     // Remove special characters
+    .replace(/-+/g, '-')            // Collapse multiple dashes
+    .replace(/^-|-$/g, '')          // Remove leading/trailing dashes
+    .substring(0, 80);
 
   const channelName = `ticket-${ticket.ticketNumber}-${sanitized}`;
   const oldName = message.channel.name;
@@ -189,10 +199,11 @@ async function handleRename(message, ticket, newName) {
     details: { ticketNumber: ticket.ticketNumber, oldName, newName: channelName }
   });
 
-  await message.reply({
-    embeds: [successEmbed(`Ticket renamed to **${channelName}**`)],
-    allowedMentions: { repliedUser: false }
+  // Send temporary confirmation
+  const confirmMsg = await message.channel.send({
+    embeds: [successEmbed(`Ticket renamed to **${channelName}**`)]
   });
+  setTimeout(() => confirmMsg.delete().catch(() => {}), 5000);
 }
 
 /**
@@ -206,6 +217,9 @@ async function handleAddUser(message, ticket, userMention) {
       allowedMentions: { repliedUser: false }
     });
   }
+
+  // Delete command message
+  await message.delete().catch(() => {});
 
   // Add permission to view the channel
   await message.channel.permissionOverwrites.edit(user.id, {
@@ -227,9 +241,8 @@ async function handleAddUser(message, ticket, userMention) {
     details: { ticketNumber: ticket.ticketNumber, addedUser: user.username, addedUserId: user.id }
   });
 
-  await message.reply({
-    embeds: [successEmbed(`Added ${user} to the ticket.`)],
-    allowedMentions: { repliedUser: false }
+  await message.channel.send({
+    embeds: [successEmbed(`${message.author} added ${user} to the ticket.`)]
   });
 }
 
@@ -253,6 +266,9 @@ async function handleRemoveUser(message, ticket, userMention) {
     });
   }
 
+  // Delete command message
+  await message.delete().catch(() => {});
+
   // Remove permission
   await message.channel.permissionOverwrites.delete(user.id);
 
@@ -269,9 +285,8 @@ async function handleRemoveUser(message, ticket, userMention) {
     details: { ticketNumber: ticket.ticketNumber, removedUser: user.username, removedUserId: user.id }
   });
 
-  await message.reply({
-    embeds: [successEmbed(`Removed ${user} from the ticket.`)],
-    allowedMentions: { repliedUser: false }
+  await message.channel.send({
+    embeds: [successEmbed(`${message.author} removed ${user} from the ticket.`)]
   });
 }
 
@@ -285,6 +300,9 @@ async function handleClaim(message, ticket) {
       allowedMentions: { repliedUser: false }
     });
   }
+
+  // Delete command message
+  await message.delete().catch(() => {});
 
   await Ticket.findByIdAndUpdate(ticket._id, {
     claimedBy: message.author.id,
@@ -300,9 +318,8 @@ async function handleClaim(message, ticket) {
     details: { ticketNumber: ticket.ticketNumber }
   });
 
-  await message.reply({
-    embeds: [successEmbed(`${message.author} has claimed this ticket.`)],
-    allowedMentions: { repliedUser: false }
+  await message.channel.send({
+    embeds: [successEmbed(`${message.author} has claimed this ticket.`)]
   });
 }
 
@@ -326,6 +343,9 @@ async function handleUnclaim(message, ticket) {
     });
   }
 
+  // Delete command message
+  await message.delete().catch(() => {});
+
   await Ticket.findByIdAndUpdate(ticket._id, {
     $unset: { claimedBy: 1, claimedByUsername: 1, claimedAt: 1 }
   });
@@ -338,9 +358,8 @@ async function handleUnclaim(message, ticket) {
     details: { ticketNumber: ticket.ticketNumber }
   });
 
-  await message.reply({
-    embeds: [successEmbed('Ticket has been unclaimed and is now available.')],
-    allowedMentions: { repliedUser: false }
+  await message.channel.send({
+    embeds: [successEmbed(`${message.author} has unclaimed this ticket. It is now available.`)]
   });
 }
 
@@ -356,6 +375,9 @@ async function handlePriority(message, ticket, priority) {
       allowedMentions: { repliedUser: false }
     });
   }
+
+  // Delete command message
+  await message.delete().catch(() => {});
 
   const newPriority = priority.toLowerCase();
   const oldPriority = ticket.priority || 'medium';
@@ -379,9 +401,8 @@ async function handlePriority(message, ticket, priority) {
     urgent: '🔴'
   };
 
-  await message.reply({
-    embeds: [successEmbed(`Priority changed to ${priorityColors[newPriority]} **${newPriority.toUpperCase()}**`)],
-    allowedMentions: { repliedUser: false }
+  await message.channel.send({
+    embeds: [successEmbed(`${message.author} set priority to ${priorityColors[newPriority]} **${newPriority.toUpperCase()}**`)]
   });
 }
 
@@ -450,6 +471,9 @@ async function handleTransfer(message, ticket, categoryName) {
     });
   }
 
+  // Delete command message
+  await message.delete().catch(() => {});
+
   const oldCategory = ticket.category;
 
   await Ticket.findByIdAndUpdate(ticket._id, {
@@ -470,9 +494,8 @@ async function handleTransfer(message, ticket, categoryName) {
     details: { ticketNumber: ticket.ticketNumber, oldCategory, newCategory: category.name }
   });
 
-  await message.reply({
-    embeds: [successEmbed(`Ticket transferred to **${category.name}**`)],
-    allowedMentions: { repliedUser: false }
+  await message.channel.send({
+    embeds: [successEmbed(`${message.author} transferred ticket to **${category.name}**`)]
   });
 }
 
