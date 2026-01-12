@@ -63,6 +63,14 @@ async function handleTicketCommand(message) {
         await handleRemoveUser(message, ticket, args[0]);
         break;
 
+      case 'addrole':
+        await handleAddRole(message, ticket, args);
+        break;
+
+      case 'removerole':
+        await handleRemoveRole(message, ticket, args);
+        break;
+
       case 'claim':
         await handleClaim(message, ticket);
         break;
@@ -285,6 +293,140 @@ async function handleRemoveUser(message, ticket, userMention) {
 
   await message.channel.send({
     embeds: [successEmbed(`${message.author} removed ${user} from the ticket.`)]
+  });
+}
+
+/**
+ * $addrole @user @role - Add a role to a user
+ */
+async function handleAddRole(message, ticket, args) {
+  const user = message.mentions.users.first();
+  const role = message.mentions.roles.first();
+
+  if (!user || !role) {
+    return message.reply({
+      embeds: [errorEmbed('Usage: `$addrole @user @role`')],
+      allowedMentions: { repliedUser: false }
+    });
+  }
+
+  // Check if bot can manage this role
+  const botMember = message.guild.members.me;
+  if (role.position >= botMember.roles.highest.position) {
+    return message.reply({
+      embeds: [errorEmbed('I cannot assign this role - it is higher than or equal to my highest role.')],
+      allowedMentions: { repliedUser: false }
+    });
+  }
+
+  // Check if the staff member can manage this role
+  if (role.position >= message.member.roles.highest.position &&
+      !message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply({
+      embeds: [errorEmbed('You cannot assign a role higher than or equal to your highest role.')],
+      allowedMentions: { repliedUser: false }
+    });
+  }
+
+  // Delete command message
+  await message.delete().catch(() => {});
+
+  // Get the member and add the role
+  const member = await message.guild.members.fetch(user.id).catch(() => null);
+  if (!member) {
+    return message.channel.send({
+      embeds: [errorEmbed('Could not find that member in the server.')]
+    });
+  }
+
+  await member.roles.add(role);
+
+  // Log the action
+  await ActivityLog.create({
+    guildId: ticket.guildId,
+    actionType: 'ticket_add_role',
+    user: { odId: message.author.id, odUsername: message.author.username },
+    details: {
+      ticketNumber: ticket.ticketNumber,
+      targetUser: user.username,
+      targetUserId: user.id,
+      roleName: role.name,
+      roleId: role.id
+    }
+  });
+
+  await message.channel.send({
+    embeds: [successEmbed(`${message.author} added role **${role.name}** to ${user}.`)]
+  });
+}
+
+/**
+ * $removerole @user @role - Remove a role from a user
+ */
+async function handleRemoveRole(message, ticket, args) {
+  const user = message.mentions.users.first();
+  const role = message.mentions.roles.first();
+
+  if (!user || !role) {
+    return message.reply({
+      embeds: [errorEmbed('Usage: `$removerole @user @role`')],
+      allowedMentions: { repliedUser: false }
+    });
+  }
+
+  // Check if bot can manage this role
+  const botMember = message.guild.members.me;
+  if (role.position >= botMember.roles.highest.position) {
+    return message.reply({
+      embeds: [errorEmbed('I cannot remove this role - it is higher than or equal to my highest role.')],
+      allowedMentions: { repliedUser: false }
+    });
+  }
+
+  // Check if the staff member can manage this role
+  if (role.position >= message.member.roles.highest.position &&
+      !message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return message.reply({
+      embeds: [errorEmbed('You cannot remove a role higher than or equal to your highest role.')],
+      allowedMentions: { repliedUser: false }
+    });
+  }
+
+  // Delete command message
+  await message.delete().catch(() => {});
+
+  // Get the member and remove the role
+  const member = await message.guild.members.fetch(user.id).catch(() => null);
+  if (!member) {
+    return message.channel.send({
+      embeds: [errorEmbed('Could not find that member in the server.')]
+    });
+  }
+
+  if (!member.roles.cache.has(role.id)) {
+    return message.channel.send({
+      embeds: [errorEmbed(`${user} does not have the **${role.name}** role.`)]
+    });
+  }
+
+  await member.roles.remove(role);
+
+  // Log the action
+  await ActivityLog.create({
+    guildId: ticket.guildId,
+    actionType: 'ticket_remove_role',
+    user: { odId: message.author.id, odUsername: message.author.username },
+    details: {
+      ticketNumber: ticket.ticketNumber,
+      targetUser: user.username,
+      targetUserId: user.id,
+      roleName: role.name,
+      roleId: role.id
+    }
+  });
+
+  await message.channel.send({
+    embeds: [successEmbed(`${message.author} removed role **${role.name}** from ${user}.`)]
   });
 }
 
@@ -524,6 +666,8 @@ async function handleHelp(message, isStaff) {
 \`$rename <name>\` - Rename the ticket channel
 \`$add @user\` - Add a user to the ticket
 \`$remove @user\` - Remove a user from the ticket
+\`$addrole @user @role\` - Add a role to a user
+\`$removerole @user @role\` - Remove a role from a user
 \`$claim\` - Claim the ticket
 \`$unclaim\` - Release the ticket
 \`$priority <level>\` - Set priority (low/medium/high/urgent)
