@@ -118,19 +118,27 @@ const roleRequestSchema = new mongoose.Schema({
   expiresAt: { type: Date }
 });
 
-// Activity Log Schema
+// Activity Log Schema - Extended with more ticket actions
 const activityLogSchema = new mongoose.Schema({
   guildId: { type: String, required: true, index: true },
-  action: { 
-    type: String, 
+  action: {
+    type: String,
     enum: [
+      // Role actions
       'role_request', 'role_approved', 'role_denied', 'role_cancelled',
       'role_given', 'role_removed', 'role_temp_given', 'role_temp_expired',
       'autorole_given', 'selfrole_given', 'selfrole_removed',
       'reactionrole_given', 'reactionrole_removed',
       'buttonrole_given', 'buttonrole_removed',
       'config_updated', 'tier_created', 'tier_updated',
-      'ticket_created', 'ticket_closed', 'ticket_claimed'
+      // Ticket actions
+      'ticket_created', 'ticket_closed', 'ticket_claimed', 'ticket_unclaimed',
+      'ticket_escalated', 'ticket_user_added', 'ticket_user_removed',
+      'ticket_priority_changed', 'ticket_renamed', 'ticket_reopened',
+      'ticket_feedback', 'ticket_archived', 'ticket_deleted',
+      // Panel actions
+      'panel_created', 'panel_updated', 'panel_deleted',
+      'automation_triggered'
     ],
     required: true
   },
@@ -140,9 +148,178 @@ const activityLogSchema = new mongoose.Schema({
   performedByUsername: { type: String },
   roleId: { type: String },
   roleName: { type: String },
+  ticketId: { type: mongoose.Schema.Types.ObjectId, ref: 'Ticket' },
+  ticketNumber: { type: Number },
+  panelId: { type: mongoose.Schema.Types.ObjectId, ref: 'TicketPanel' },
   details: { type: mongoose.Schema.Types.Mixed },
   createdAt: { type: Date, default: Date.now, index: true }
 });
+
+// Canned Responses Schema - For quick replies in tickets
+const cannedResponseSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  name: { type: String, required: true },
+  shortcut: { type: String, required: true }, // e.g., "!greet"
+  content: { type: String, required: true },
+  category: { type: String },
+  useCount: { type: Number, default: 0 },
+  createdBy: { type: String },
+  createdAt: { type: Date, default: Date.now }
+});
+
+cannedResponseSchema.index({ guildId: 1, shortcut: 1 }, { unique: true });
+
+// Ticket Analytics Schema - Enhanced with more metrics
+const ticketAnalyticsSchema = new mongoose.Schema({
+  guildId: { type: String, required: true },
+  date: { type: Date, required: true },
+  ticketsCreated: { type: Number, default: 0 },
+  ticketsClosed: { type: Number, default: 0 },
+  ticketsReopened: { type: Number, default: 0 },
+  avgResponseTime: { type: Number }, // minutes
+  avgResolutionTime: { type: Number }, // minutes
+  avgMessagesPerTicket: { type: Number },
+  feedbackAverage: { type: Number },
+  feedbackCount: { type: Number, default: 0 },
+  byCategory: { type: Map, of: Number },
+  byStaff: { type: Map, of: Number },
+  byPriority: { type: Map, of: Number },
+  byHour: [{ type: Number }], // 24 entries for each hour
+  slaBreaches: { type: Number, default: 0 },
+  peakHour: { type: Number }
+});
+
+ticketAnalyticsSchema.index({ guildId: 1, date: 1 }, { unique: true });
+
+// Staff Performance Schema - Track individual staff metrics
+const staffPerformanceSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  odId: { type: String, required: true },
+  odUsername: { type: String },
+  period: { type: String, required: true }, // 'daily', 'weekly', 'monthly', 'all-time'
+  periodStart: { type: Date, required: true },
+  ticketsClaimed: { type: Number, default: 0 },
+  ticketsClosed: { type: Number, default: 0 },
+  ticketsResolved: { type: Number, default: 0 },
+  avgResponseTime: { type: Number }, // minutes
+  avgResolutionTime: { type: Number }, // minutes
+  totalMessages: { type: Number, default: 0 },
+  feedbackReceived: { type: Number, default: 0 },
+  feedbackAverage: { type: Number },
+  slaBreaches: { type: Number, default: 0 },
+  points: { type: Number, default: 0 }, // Gamification points
+  updatedAt: { type: Date, default: Date.now }
+});
+
+staffPerformanceSchema.index({ guildId: 1, odId: 1, period: 1, periodStart: 1 }, { unique: true });
+
+// SLA Configuration Schema
+const slaConfigSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  enabled: { type: Boolean, default: false },
+  responseTargets: {
+    urgent: { type: Number, default: 15 },
+    high: { type: Number, default: 60 },
+    medium: { type: Number, default: 240 },
+    low: { type: Number, default: 480 }
+  },
+  resolutionTargets: {
+    urgent: { type: Number, default: 60 },
+    high: { type: Number, default: 480 },
+    medium: { type: Number, default: 1440 },
+    low: { type: Number, default: 2880 }
+  },
+  alerts: {
+    enabled: { type: Boolean, default: true },
+    channelId: { type: String },
+    warnAtPercent: { type: Number, default: 80 },
+    pingRoles: [{ type: String }]
+  },
+  businessHours: {
+    enabled: { type: Boolean, default: false },
+    timezone: { type: String, default: 'UTC' },
+    schedule: [{
+      day: { type: Number },
+      start: { type: String },
+      end: { type: String }
+    }],
+    pauseSlaOutsideHours: { type: Boolean, default: true }
+  },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// Ticket Tags Schema
+const ticketTagSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  name: { type: String, required: true },
+  color: { type: String, default: '#5865F2' },
+  description: { type: String },
+  useCount: { type: Number, default: 0 },
+  createdBy: { type: String },
+  createdAt: { type: Date, default: Date.now }
+});
+
+ticketTagSchema.index({ guildId: 1, name: 1 }, { unique: true });
+
+// Blacklist Schema
+const blacklistSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  odId: { type: String, required: true },
+  odUsername: { type: String },
+  reason: { type: String },
+  expiresAt: { type: Date },
+  addedBy: { type: String },
+  addedByUsername: { type: String },
+  createdAt: { type: Date, default: Date.now }
+});
+
+blacklistSchema.index({ guildId: 1, odId: 1 }, { unique: true });
+
+// Internal Notes Schema - Staff-only notes on tickets
+const ticketNoteSchema = new mongoose.Schema({
+  ticketId: { type: mongoose.Schema.Types.ObjectId, ref: 'Ticket', required: true, index: true },
+  guildId: { type: String, required: true },
+  authorId: { type: String, required: true },
+  authorUsername: { type: String },
+  content: { type: String, required: true },
+  isPinned: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// Scheduled Actions Schema
+const scheduledActionSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  ticketId: { type: mongoose.Schema.Types.ObjectId, ref: 'Ticket' },
+  channelId: { type: String },
+  type: {
+    type: String,
+    enum: ['send_message', 'close_ticket', 'reminder', 'escalate', 'ping_staff'],
+    required: true
+  },
+  data: { type: mongoose.Schema.Types.Mixed },
+  scheduledFor: { type: Date, required: true, index: true },
+  createdBy: { type: String },
+  executed: { type: Boolean, default: false },
+  executedAt: { type: Date },
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Snippets/Macros Schema
+const snippetSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  name: { type: String, required: true },
+  trigger: { type: String, required: true },
+  content: { type: String, required: true },
+  category: { type: String },
+  variables: [{ type: String }],
+  useCount: { type: Number, default: 0 },
+  createdBy: { type: String },
+  createdAt: { type: Date, default: Date.now }
+});
+
+snippetSchema.index({ guildId: 1, trigger: 1 }, { unique: true });
 
 // Temporary Roles Schema
 const tempRoleSchema = new mongoose.Schema({
@@ -166,18 +343,29 @@ const userStatsSchema = new mongoose.Schema({
 });
 
 userStatsSchema.index({ guildId: 1, odId: 1 }, { unique: true });
-// Ticket Schema
+// Ticket Schema - Enhanced with form responses and more features
 const ticketSchema = new mongoose.Schema({
   guildId: { type: String, required: true, index: true },
   channelId: { type: String, required: true, unique: true },
+  threadId: { type: String }, // For thread-style tickets
   userId: { type: String, required: true, index: true },
   username: { type: String },
+  userAvatar: { type: String },
   ticketNumber: { type: Number, required: true },
   category: { type: String },
+  categoryId: { type: String },
   subject: { type: String },
+
+  // Form responses from pre-ticket forms
+  formResponses: [{
+    formId: { type: String, required: true },
+    label: { type: String },
+    response: { type: String }
+  }],
+
   status: {
     type: String,
-    enum: ['open', 'closed', 'archived'],
+    enum: ['open', 'closed', 'archived', 'on_hold'],
     default: 'open',
     index: true
   },
@@ -186,20 +374,51 @@ const ticketSchema = new mongoose.Schema({
     enum: ['low', 'medium', 'high', 'urgent'],
     default: 'medium'
   },
+
+  // Claiming
   claimedBy: { type: String },
   claimedByUsername: { type: String },
   claimedAt: { type: Date },
+
+  // Closing
   closedBy: { type: String },
   closedByUsername: { type: String },
   closedAt: { type: Date },
   closeReason: { type: String },
+
+  // Escalation tracking
+  escalatedFrom: { type: mongoose.Schema.Types.ObjectId, ref: 'TicketPanel' },
+  escalatedBy: { type: String },
+  escalatedAt: { type: Date },
+  escalationReason: { type: String },
+
+  // Participants
   participants: [{
     userId: { type: String, required: true },
     username: { type: String },
     addedAt: { type: Date, default: Date.now },
     addedBy: { type: String }
   }],
+
+  // Feedback
+  feedback: {
+    rating: { type: Number, min: 1, max: 5 },
+    comment: { type: String },
+    submittedAt: { type: Date }
+  },
+
+  // Transcript
   transcript: { type: String },
+  transcriptUrl: { type: String }, // URL to HTML transcript if hosted
+
+  // Message count for analytics
+  messageCount: { type: Number, default: 0 },
+  firstResponseAt: { type: Date },
+  lastMessageAt: { type: Date },
+
+  // Tags for organization
+  tags: [{ type: String }],
+
   panelId: { type: mongoose.Schema.Types.ObjectId, ref: 'TicketPanel' },
   createdAt: { type: Date, default: Date.now, index: true },
   updatedAt: { type: Date, default: Date.now }
@@ -212,29 +431,161 @@ ticketSchema.pre('save', function(next) {
   next();
 });
 
-// Ticket Panel Schema
+// Ticket Panel Schema - Full Ticket Tool Premium features
 const ticketPanelSchema = new mongoose.Schema({
   guildId: { type: String, required: true, index: true },
   channelId: { type: String, required: true },
-  messageId: { type: String, required: true },
+  messageId: { type: String },
   name: { type: String, required: true },
   description: { type: String },
+
+  // Panel embed customization
+  embed: {
+    title: { type: String },
+    description: { type: String },
+    color: { type: String, default: '#5865F2' },
+    thumbnail: { type: String },
+    image: { type: String },
+    footer: { type: String }
+  },
+
+  // Button configuration
+  button: {
+    label: { type: String, default: 'Create Ticket' },
+    emoji: { type: String },
+    style: { type: String, enum: ['Primary', 'Secondary', 'Success', 'Danger'], default: 'Primary' }
+  },
+
+  // Ticket categories
   categories: [{
     id: { type: String, required: true },
     name: { type: String, required: true },
     description: { type: String },
     emoji: { type: String },
+    buttonLabel: { type: String },
+    buttonStyle: { type: String, enum: ['Primary', 'Secondary', 'Success', 'Danger'], default: 'Primary' },
     staffRoles: [{ type: String }],
-    welcomeMessage: { type: String, default: 'Thank you for creating a ticket! A staff member will be with you shortly.' }
+    pingRoles: [{ type: String }],
+    welcomeMessage: { type: String, default: 'Thank you for creating a ticket! A staff member will be with you shortly.' },
+    // Category-specific forms
+    forms: [{
+      id: { type: String, required: true },
+      label: { type: String, required: true },
+      placeholder: { type: String },
+      style: { type: String, enum: ['short', 'paragraph'], default: 'short' },
+      required: { type: Boolean, default: false },
+      minLength: { type: Number },
+      maxLength: { type: Number }
+    }]
   }],
-  settings: {
-    categoryId: { type: String },
-    namingScheme: { type: String, default: 'ticket-{number}' },
-    maxTicketsPerUser: { type: Number, default: 1 },
-    autoCloseHours: { type: Number, default: 0 },
-    transcriptChannelId: { type: String },
-    logChannelId: { type: String }
+
+  // Multi-panel support (combine multiple panels)
+  multiPanel: {
+    enabled: { type: Boolean, default: false },
+    attachedPanels: [{ type: mongoose.Schema.Types.ObjectId, ref: 'TicketPanel' }],
+    buttonsPerRow: { type: Number, default: 5, min: 1, max: 5 }
   },
+
+  // Ticket style options
+  style: {
+    type: { type: String, enum: ['channel', 'thread', 'dropdown'], default: 'channel' },
+    threadParentId: { type: String }, // For thread-style tickets
+    dropdownPlaceholder: { type: String, default: 'Select a category...' }
+  },
+
+  // Pre-ticket forms (applies to all categories if not category-specific)
+  forms: [{
+    id: { type: String, required: true },
+    label: { type: String, required: true },
+    placeholder: { type: String },
+    style: { type: String, enum: ['short', 'paragraph'], default: 'short' },
+    required: { type: Boolean, default: false },
+    minLength: { type: Number },
+    maxLength: { type: Number }
+  }],
+
+  // Automations
+  automations: [{
+    id: { type: String, required: true },
+    name: { type: String, required: true },
+    enabled: { type: Boolean, default: true },
+    trigger: {
+      type: { type: String, enum: ['ticket_created', 'ticket_claimed', 'inactivity', 'keyword', 'time_elapsed'], required: true },
+      value: { type: mongoose.Schema.Types.Mixed } // e.g., hours for inactivity, keyword for keyword trigger
+    },
+    actions: [{
+      type: { type: String, enum: ['send_message', 'add_role', 'remove_role', 'close_ticket', 'claim_ticket', 'ping_role', 'set_priority'], required: true },
+      value: { type: mongoose.Schema.Types.Mixed }
+    }]
+  }],
+
+  // Escalation settings
+  escalation: {
+    enabled: { type: Boolean, default: false },
+    targetPanels: [{ type: mongoose.Schema.Types.ObjectId, ref: 'TicketPanel' }],
+    requireReason: { type: Boolean, default: true }
+  },
+
+  // Claiming options
+  claiming: {
+    enabled: { type: Boolean, default: true },
+    autoClaimEnabled: { type: Boolean, default: false },
+    staffOnlyClaimEnabled: { type: Boolean, default: true },
+    unclaimEnabled: { type: Boolean, default: true },
+    claimMessage: { type: String, default: 'This ticket has been claimed by {user}.' }
+  },
+
+  // Ticket limits
+  limits: {
+    maxTicketsPerUser: { type: Number, default: 1 },
+    maxTotalTickets: { type: Number, default: 0 }, // 0 = unlimited
+    cooldownSeconds: { type: Number, default: 0 }, // Time between ticket creations
+    requireRoles: [{ type: String }], // Roles required to create tickets
+    blacklistRoles: [{ type: String }] // Roles that cannot create tickets
+  },
+
+  // Permissions / Staff settings
+  permissions: {
+    supportRoles: [{ type: String }],
+    adminRoles: [{ type: String }],
+    canCloseRoles: [{ type: String }],
+    canDeleteRoles: [{ type: String }],
+    canViewAllTickets: [{ type: String }]
+  },
+
+  // General settings
+  settings: {
+    categoryId: { type: String }, // Discord category for ticket channels
+    namingScheme: { type: String, default: 'ticket-{number}' },
+    autoCloseHours: { type: Number, default: 0 },
+    autoCloseWarningHours: { type: Number, default: 0 },
+    deleteOnClose: { type: Boolean, default: false },
+    deleteAfterHours: { type: Number, default: 0 },
+    closeConfirmation: { type: Boolean, default: true },
+    feedbackEnabled: { type: Boolean, default: false },
+    feedbackMessage: { type: String, default: 'How would you rate your support experience?' }
+  },
+
+  // Transcript settings
+  transcripts: {
+    enabled: { type: Boolean, default: true },
+    channelId: { type: String },
+    dmToUser: { type: Boolean, default: true },
+    format: { type: String, enum: ['text', 'html'], default: 'html' },
+    includeAttachments: { type: Boolean, default: true }
+  },
+
+  // Logging settings
+  logging: {
+    enabled: { type: Boolean, default: true },
+    channelId: { type: String },
+    logCreation: { type: Boolean, default: true },
+    logClose: { type: Boolean, default: true },
+    logClaim: { type: Boolean, default: true },
+    logEscalation: { type: Boolean, default: true },
+    logAddRemoveUser: { type: Boolean, default: true }
+  },
+
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
@@ -260,5 +611,14 @@ module.exports = {
   UserStats: mongoose.model('UserStats', userStatsSchema),
   Ticket: mongoose.model('Ticket', ticketSchema),
   TicketPanel: mongoose.model('TicketPanel', ticketPanelSchema),
-  TicketCounter: mongoose.model('TicketCounter', ticketCounterSchema)
+  TicketCounter: mongoose.model('TicketCounter', ticketCounterSchema),
+  CannedResponse: mongoose.model('CannedResponse', cannedResponseSchema),
+  TicketAnalytics: mongoose.model('TicketAnalytics', ticketAnalyticsSchema),
+  StaffPerformance: mongoose.model('StaffPerformance', staffPerformanceSchema),
+  SlaConfig: mongoose.model('SlaConfig', slaConfigSchema),
+  TicketTag: mongoose.model('TicketTag', ticketTagSchema),
+  Blacklist: mongoose.model('Blacklist', blacklistSchema),
+  TicketNote: mongoose.model('TicketNote', ticketNoteSchema),
+  ScheduledAction: mongoose.model('ScheduledAction', scheduledActionSchema),
+  Snippet: mongoose.model('Snippet', snippetSchema)
 };

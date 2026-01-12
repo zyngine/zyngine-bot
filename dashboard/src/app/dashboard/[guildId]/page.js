@@ -4,6 +4,15 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
+import TicketPanelBuilder from '@/components/TicketPanelBuilder';
+import AnalyticsDashboard from '@/components/AnalyticsDashboard';
+import StaffLeaderboard from '@/components/StaffLeaderboard';
+import SLAConfiguration from '@/components/SLAConfiguration';
+import CannedResponses from '@/components/CannedResponses';
+import TagsManager from '@/components/TagsManager';
+import BlacklistManager from '@/components/BlacklistManager';
+import AuditLogs from '@/components/AuditLogs';
+import TicketSearch from '@/components/TicketSearch';
 
 export default function GuildDashboard() {
   const { data: session, status } = useSession();
@@ -27,6 +36,9 @@ export default function GuildDashboard() {
   const [showAddAutoRole, setShowAddAutoRole] = useState(false);
   const [showAddTier, setShowAddTier] = useState(false);
   const [editingAutoRole, setEditingAutoRole] = useState(null);
+  const [showPanelBuilder, setShowPanelBuilder] = useState(false);
+  const [editingPanel, setEditingPanel] = useState(null);
+  const [ticketSubTab, setTicketSubTab] = useState('overview');
 
   // Form states
   const [newAutoRole, setNewAutoRole] = useState({
@@ -328,37 +340,182 @@ export default function GuildDashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-4 mb-6 border-b border-gray-700 pb-4 overflow-x-auto">
-          {['overview', 'auto-roles', 'tiers', 'requests', 'tickets', 'settings'].map((tab) => (
+        <div className="flex gap-2 mb-6 border-b border-gray-700 pb-4 overflow-x-auto">
+          {[
+            { id: 'overview', label: 'Overview' },
+            { id: 'tickets', label: 'Tickets' },
+            { id: 'analytics', label: 'Analytics' },
+            { id: 'staff', label: 'Staff' },
+            { id: 'auto-roles', label: 'Auto Roles' },
+            { id: 'tiers', label: 'Tiers' },
+            { id: 'requests', label: 'Requests' },
+            { id: 'tools', label: 'Tools' },
+            { id: 'settings', label: 'Settings' }
+          ].map((tab) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-lg capitalize transition whitespace-nowrap ${
-                activeTab === tab
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 rounded-lg transition whitespace-nowrap ${
+                activeTab === tab.id
                   ? 'bg-discord-accent text-white'
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              {tab.replace('-', ' ')}
+              {tab.label}
             </button>
           ))}
         </div>
 
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="card">
-              <h3 className="text-gray-400 text-sm mb-1">Auto Roles</h3>
-              <p className="text-3xl font-bold">{guild?.autoRoles?.length || 0}</p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="card">
+                <h3 className="text-gray-400 text-sm mb-1">Open Tickets</h3>
+                <p className="text-3xl font-bold text-discord-green">
+                  {tickets.filter(t => t.status === 'open').length}
+                </p>
+              </div>
+              <div className="card">
+                <h3 className="text-gray-400 text-sm mb-1">Total Tickets</h3>
+                <p className="text-3xl font-bold">{tickets.length}</p>
+              </div>
+              <div className="card">
+                <h3 className="text-gray-400 text-sm mb-1">Ticket Panels</h3>
+                <p className="text-3xl font-bold">{ticketPanels.length}</p>
+              </div>
+              <div className="card">
+                <h3 className="text-gray-400 text-sm mb-1">Pending Requests</h3>
+                <p className="text-3xl font-bold">{requests.length}</p>
+              </div>
             </div>
-            <div className="card">
-              <h3 className="text-gray-400 text-sm mb-1">Pending Requests</h3>
-              <p className="text-3xl font-bold">{requests.length}</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="card">
+                <h3 className="text-gray-400 text-sm mb-1">Auto Roles</h3>
+                <p className="text-3xl font-bold">{guild?.autoRoles?.length || 0}</p>
+              </div>
+              <div className="card">
+                <h3 className="text-gray-400 text-sm mb-1">Role Tiers</h3>
+                <p className="text-3xl font-bold">{guild?.roleTiers?.length || 0}</p>
+              </div>
+              <div className="card">
+                <h3 className="text-gray-400 text-sm mb-1">Discord Roles</h3>
+                <p className="text-3xl font-bold">{discordRoles.length}</p>
+              </div>
             </div>
+
+            {/* Quick Actions */}
             <div className="card">
-              <h3 className="text-gray-400 text-sm mb-1">Role Tiers</h3>
-              <p className="text-3xl font-bold">{guild?.roleTiers?.length || 0}</p>
+              <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => { setActiveTab('tickets'); setTicketSubTab('panels'); }}
+                  className="btn-primary"
+                >
+                  Manage Panels
+                </button>
+                <button
+                  onClick={() => setActiveTab('analytics')}
+                  className="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg transition"
+                >
+                  View Analytics
+                </button>
+                <button
+                  onClick={() => setActiveTab('staff')}
+                  className="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg transition"
+                >
+                  Staff Leaderboard
+                </button>
+              </div>
             </div>
+
+            {/* Recent Tickets */}
+            <div className="card">
+              <h3 className="text-lg font-semibold mb-4">Recent Tickets</h3>
+              {tickets.slice(0, 5).length > 0 ? (
+                <div className="space-y-2">
+                  {tickets.slice(0, 5).map(ticket => (
+                    <div key={ticket._id} className="flex items-center justify-between bg-discord-dark p-3 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <span className={`w-2 h-2 rounded-full ${ticket.status === 'open' ? 'bg-green-500' : 'bg-gray-500'}`} />
+                        <span className="font-medium">#{ticket.ticketNumber}</span>
+                        <span className="text-gray-400 text-sm">{ticket.username}</span>
+                        {ticket.category && <span className="text-gray-500 text-xs">{ticket.category}</span>}
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {new Date(ticket.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-400">No tickets yet.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <AnalyticsDashboard guildId={params.guildId} />
+        )}
+
+        {/* Staff Tab */}
+        {activeTab === 'staff' && (
+          <StaffLeaderboard guildId={params.guildId} />
+        )}
+
+        {/* Tools Tab */}
+        {activeTab === 'tools' && (
+          <div className="space-y-6">
+            {/* Tools Sub-tabs */}
+            <div className="flex gap-2 border-b border-gray-700 pb-3 overflow-x-auto">
+              {[
+                { id: 'canned', label: 'Canned Responses' },
+                { id: 'tags', label: 'Tags' },
+                { id: 'sla', label: 'SLA Config' },
+                { id: 'blacklist', label: 'Blacklist' },
+                { id: 'audit', label: 'Audit Logs' },
+                { id: 'search', label: 'Search' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setTicketSubTab(tab.id)}
+                  className={`px-4 py-2 rounded-lg text-sm transition ${
+                    ticketSubTab === tab.id
+                      ? 'bg-discord-accent text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {ticketSubTab === 'canned' && (
+              <CannedResponses guildId={params.guildId} onMessage={showMessage} />
+            )}
+
+            {ticketSubTab === 'tags' && (
+              <TagsManager guildId={params.guildId} onMessage={showMessage} />
+            )}
+
+            {ticketSubTab === 'sla' && (
+              <SLAConfiguration guildId={params.guildId} onMessage={showMessage} />
+            )}
+
+            {ticketSubTab === 'blacklist' && (
+              <BlacklistManager guildId={params.guildId} onMessage={showMessage} />
+            )}
+
+            {ticketSubTab === 'audit' && (
+              <AuditLogs guildId={params.guildId} />
+            )}
+
+            {ticketSubTab === 'search' && (
+              <TicketSearch guildId={params.guildId} onMessage={showMessage} />
+            )}
           </div>
         )}
 
@@ -667,181 +824,396 @@ export default function GuildDashboard() {
         {/* Tickets Tab */}
         {activeTab === 'tickets' && (
           <div className="space-y-6">
-            {/* Ticket Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="card">
-                <h3 className="text-gray-400 text-sm mb-1">Open Tickets</h3>
-                <p className="text-3xl font-bold text-discord-green">
-                  {tickets.filter(t => t.status === 'open').length}
-                </p>
-              </div>
-              <div className="card">
-                <h3 className="text-gray-400 text-sm mb-1">Closed Tickets</h3>
-                <p className="text-3xl font-bold">
-                  {tickets.filter(t => t.status === 'closed').length}
-                </p>
-              </div>
-              <div className="card">
-                <h3 className="text-gray-400 text-sm mb-1">Total Tickets</h3>
-                <p className="text-3xl font-bold">{tickets.length}</p>
-              </div>
-              <div className="card">
-                <h3 className="text-gray-400 text-sm mb-1">Ticket Panels</h3>
-                <p className="text-3xl font-bold">{ticketPanels.length}</p>
-              </div>
+            {/* Sub-tabs */}
+            <div className="flex gap-2 border-b border-gray-700 pb-3">
+              {[
+                { id: 'overview', label: 'Overview', icon: '📊' },
+                { id: 'open', label: 'Open Tickets', icon: '📬' },
+                { id: 'closed', label: 'Closed', icon: '📪' },
+                { id: 'panels', label: 'Panels', icon: '🎛️' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setTicketSubTab(tab.id)}
+                  className={`px-4 py-2 rounded-lg text-sm transition flex items-center gap-2 ${
+                    ticketSubTab === tab.id
+                      ? 'bg-discord-accent text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  <span>{tab.icon}</span>
+                  <span>{tab.label}</span>
+                </button>
+              ))}
             </div>
 
-            {/* Open Tickets */}
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-4">Open Tickets</h2>
-              {tickets.filter(t => t.status === 'open').length > 0 ? (
-                <div className="space-y-3">
-                  {tickets.filter(t => t.status === 'open').map((ticket) => (
-                    <div key={ticket._id} className="bg-discord-dark p-4 rounded-lg">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">#{ticket.ticketNumber}</span>
-                            <span className={`px-2 py-0.5 rounded text-xs ${
-                              ticket.priority === 'urgent' ? 'bg-discord-red/20 text-discord-red' :
-                              ticket.priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                              ticket.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                              'bg-gray-500/20 text-gray-400'
-                            }`}>
-                              {ticket.priority}
-                            </span>
-                            {ticket.claimedBy && (
-                              <span className="px-2 py-0.5 rounded text-xs bg-discord-accent/20 text-discord-accent">
-                                Claimed by {ticket.claimedByUsername}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-400 mt-1">
-                            Created by: {ticket.username || ticket.userId}
-                          </p>
-                          {ticket.subject && (
-                            <p className="text-sm text-gray-300 mt-1">{ticket.subject}</p>
-                          )}
-                          <p className="text-xs text-gray-500 mt-1">
-                            {ticket.category} | {new Date(ticket.createdAt).toLocaleString()}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={async () => {
-                              const res = await fetch(`/api/guilds/${params.guildId}/tickets/${ticket._id}`, {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ status: 'closed' })
-                              });
-                              if (res.ok) {
-                                setTickets(tickets.map(t =>
-                                  t._id === ticket._id ? { ...t, status: 'closed', closedAt: new Date() } : t
-                                ));
-                                showMessage('success', 'Ticket closed');
-                              }
-                            }}
-                            className="bg-discord-red hover:bg-discord-red/80 px-3 py-1 rounded-lg text-sm transition"
-                          >
-                            Close
-                          </button>
-                        </div>
-                      </div>
-                      {ticket.participants?.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-gray-700">
-                          <p className="text-xs text-gray-500">
-                            Participants: {ticket.participants.map(p => p.username || p.userId).join(', ')}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+            {/* Overview Sub-tab */}
+            {ticketSubTab === 'overview' && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="card">
+                    <h3 className="text-gray-400 text-sm mb-1">Open Tickets</h3>
+                    <p className="text-3xl font-bold text-discord-green">
+                      {tickets.filter(t => t.status === 'open').length}
+                    </p>
+                  </div>
+                  <div className="card">
+                    <h3 className="text-gray-400 text-sm mb-1">Closed Tickets</h3>
+                    <p className="text-3xl font-bold">
+                      {tickets.filter(t => t.status === 'closed').length}
+                    </p>
+                  </div>
+                  <div className="card">
+                    <h3 className="text-gray-400 text-sm mb-1">Total Tickets</h3>
+                    <p className="text-3xl font-bold">{tickets.length}</p>
+                  </div>
+                  <div className="card">
+                    <h3 className="text-gray-400 text-sm mb-1">Ticket Panels</h3>
+                    <p className="text-3xl font-bold">{ticketPanels.length}</p>
+                  </div>
                 </div>
-              ) : (
-                <p className="text-gray-400">No open tickets.</p>
-              )}
-            </div>
 
-            {/* Closed Tickets */}
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-4">Recently Closed Tickets</h2>
-              {tickets.filter(t => t.status === 'closed').slice(0, 10).length > 0 ? (
-                <div className="space-y-3">
-                  {tickets.filter(t => t.status === 'closed').slice(0, 10).map((ticket) => (
-                    <div key={ticket._id} className="bg-discord-dark p-4 rounded-lg opacity-75">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-2">
+                {/* Quick Actions */}
+                <div className="card">
+                  <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setEditingPanel(null); setShowPanelBuilder(true); }}
+                      className="btn-primary"
+                    >
+                      + Create Panel
+                    </button>
+                    <button
+                      onClick={() => setTicketSubTab('open')}
+                      className="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg transition"
+                    >
+                      View Open Tickets ({tickets.filter(t => t.status === 'open').length})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="card">
+                  <h3 className="text-lg font-semibold mb-4">Recent Tickets</h3>
+                  {tickets.slice(0, 5).length > 0 ? (
+                    <div className="space-y-2">
+                      {tickets.slice(0, 5).map(ticket => (
+                        <div key={ticket._id} className="flex items-center justify-between bg-discord-dark p-3 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <span className={`w-2 h-2 rounded-full ${ticket.status === 'open' ? 'bg-green-500' : 'bg-gray-500'}`} />
                             <span className="font-medium">#{ticket.ticketNumber}</span>
-                            <span className="px-2 py-0.5 rounded text-xs bg-gray-500/20 text-gray-400">
-                              Closed
-                            </span>
+                            <span className="text-gray-400 text-sm">{ticket.username}</span>
+                            <span className="text-gray-500 text-xs">{ticket.category}</span>
                           </div>
-                          <p className="text-sm text-gray-400 mt-1">
-                            Created by: {ticket.username || ticket.userId}
-                          </p>
-                          {ticket.closeReason && (
-                            <p className="text-sm text-gray-500 mt-1 italic">Reason: {ticket.closeReason}</p>
-                          )}
-                          <p className="text-xs text-gray-500 mt-1">
-                            Closed by {ticket.closedByUsername} on {new Date(ticket.closedAt).toLocaleString()}
-                          </p>
+                          <span className="text-xs text-gray-500">
+                            {new Date(ticket.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
-                        {ticket.transcript && (
-                          <button
-                            onClick={() => {
-                              const blob = new Blob([ticket.transcript], { type: 'text/plain' });
-                              const url = URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.href = url;
-                              a.download = `ticket-${ticket.ticketNumber}-transcript.txt`;
-                              a.click();
-                            }}
-                            className="bg-discord-accent hover:bg-discord-accent/80 px-3 py-1 rounded-lg text-sm transition"
-                          >
-                            Download Transcript
-                          </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400">No tickets yet.</p>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Open Tickets Sub-tab */}
+            {ticketSubTab === 'open' && (
+              <div className="card">
+                <h2 className="text-xl font-semibold mb-4">Open Tickets</h2>
+                {tickets.filter(t => t.status === 'open').length > 0 ? (
+                  <div className="space-y-3">
+                    {tickets.filter(t => t.status === 'open').map((ticket) => (
+                      <div key={ticket._id} className="bg-discord-dark p-4 rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium">#{ticket.ticketNumber}</span>
+                              <span className={`px-2 py-0.5 rounded text-xs ${
+                                ticket.priority === 'urgent' ? 'bg-discord-red/20 text-discord-red' :
+                                ticket.priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                                ticket.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                                'bg-gray-500/20 text-gray-400'
+                              }`}>
+                                {ticket.priority}
+                              </span>
+                              {ticket.claimedBy && (
+                                <span className="px-2 py-0.5 rounded text-xs bg-discord-accent/20 text-discord-accent">
+                                  Claimed by {ticket.claimedByUsername}
+                                </span>
+                              )}
+                              {ticket.category && (
+                                <span className="px-2 py-0.5 rounded text-xs bg-gray-600 text-gray-300">
+                                  {ticket.category}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-400 mt-1">
+                              Created by: {ticket.username || ticket.userId}
+                            </p>
+                            {ticket.subject && (
+                              <p className="text-sm text-gray-300 mt-1">{ticket.subject}</p>
+                            )}
+                            {ticket.formResponses?.length > 0 && (
+                              <div className="mt-2 p-2 bg-discord-darker rounded text-sm">
+                                {ticket.formResponses.map((fr, i) => (
+                                  <div key={i} className="mb-1">
+                                    <span className="text-gray-400">{fr.label}:</span>{' '}
+                                    <span className="text-gray-200">{fr.response}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <p className="text-xs text-gray-500 mt-2">
+                              {new Date(ticket.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={async () => {
+                                const res = await fetch(`/api/guilds/${params.guildId}/tickets/${ticket._id}`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ status: 'closed' })
+                                });
+                                if (res.ok) {
+                                  setTickets(tickets.map(t =>
+                                    t._id === ticket._id ? { ...t, status: 'closed', closedAt: new Date() } : t
+                                  ));
+                                  showMessage('success', 'Ticket closed');
+                                }
+                              }}
+                              className="bg-discord-red hover:bg-discord-red/80 px-3 py-1 rounded-lg text-sm transition"
+                            >
+                              Close
+                            </button>
+                          </div>
+                        </div>
+                        {ticket.participants?.length > 1 && (
+                          <div className="mt-3 pt-3 border-t border-gray-700">
+                            <p className="text-xs text-gray-500">
+                              Participants: {ticket.participants.map(p => p.username || p.userId).join(', ')}
+                            </p>
+                          </div>
                         )}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-400">No closed tickets.</p>
-              )}
-            </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400">No open tickets.</p>
+                )}
+              </div>
+            )}
 
-            {/* Ticket Panels */}
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-4">Ticket Panels</h2>
-              <p className="text-gray-400 text-sm mb-4">
-                Use <code className="bg-discord-dark px-2 py-1 rounded">/ticket-panel create</code> in Discord to create ticket panels.
-              </p>
-              {ticketPanels.length > 0 ? (
-                <div className="space-y-3">
-                  {ticketPanels.map((panel) => (
-                    <div key={panel._id} className="bg-discord-dark p-4 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{panel.name}</p>
-                          {panel.description && (
-                            <p className="text-sm text-gray-400">{panel.description}</p>
-                          )}
-                          <p className="text-xs text-gray-500 mt-1">
-                            {panel.categories?.length || 0} categories | Max {panel.settings?.maxTicketsPerUser || 1} tickets per user
-                          </p>
+            {/* Closed Tickets Sub-tab */}
+            {ticketSubTab === 'closed' && (
+              <div className="card">
+                <h2 className="text-xl font-semibold mb-4">Closed Tickets</h2>
+                {tickets.filter(t => t.status === 'closed').length > 0 ? (
+                  <div className="space-y-3">
+                    {tickets.filter(t => t.status === 'closed').map((ticket) => (
+                      <div key={ticket._id} className="bg-discord-dark p-4 rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">#{ticket.ticketNumber}</span>
+                              <span className="px-2 py-0.5 rounded text-xs bg-gray-500/20 text-gray-400">
+                                Closed
+                              </span>
+                              {ticket.feedback?.rating && (
+                                <span className="px-2 py-0.5 rounded text-xs bg-yellow-500/20 text-yellow-400">
+                                  {'⭐'.repeat(ticket.feedback.rating)}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-400 mt-1">
+                              Created by: {ticket.username || ticket.userId}
+                            </p>
+                            {ticket.closeReason && (
+                              <p className="text-sm text-gray-500 mt-1 italic">Reason: {ticket.closeReason}</p>
+                            )}
+                            <p className="text-xs text-gray-500 mt-1">
+                              Closed by {ticket.closedByUsername} on {new Date(ticket.closedAt).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            {ticket.transcript && (
+                              <button
+                                onClick={() => {
+                                  const blob = new Blob([ticket.transcript], { type: 'text/html' });
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  a.download = `ticket-${ticket.ticketNumber}-transcript.html`;
+                                  a.click();
+                                }}
+                                className="bg-discord-accent hover:bg-discord-accent/80 px-3 py-1 rounded-lg text-sm transition"
+                              >
+                                Transcript
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <span className="text-xs text-gray-500">
-                          Created {new Date(panel.createdAt).toLocaleDateString()}
-                        </span>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400">No closed tickets.</p>
+                )}
+              </div>
+            )}
+
+            {/* Panels Sub-tab */}
+            {ticketSubTab === 'panels' && (
+              <div className="card">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Ticket Panels</h2>
+                  <button
+                    onClick={() => { setEditingPanel(null); setShowPanelBuilder(true); }}
+                    className="btn-primary"
+                  >
+                    + Create Panel
+                  </button>
                 </div>
-              ) : (
-                <p className="text-gray-400">No ticket panels configured.</p>
-              )}
-            </div>
+
+                <p className="text-gray-400 text-sm mb-4">
+                  Create and manage ticket panels from the dashboard. Panels can be sent to channels to allow users to create tickets.
+                </p>
+
+                {ticketPanels.length > 0 ? (
+                  <div className="space-y-3">
+                    {ticketPanels.map((panel) => (
+                      <div key={panel._id} className="bg-discord-dark p-4 rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{panel.name}</p>
+                              {panel.style?.type && panel.style.type !== 'channel' && (
+                                <span className="px-2 py-0.5 rounded text-xs bg-purple-500/20 text-purple-400">
+                                  {panel.style.type}
+                                </span>
+                              )}
+                            </div>
+                            {panel.description && (
+                              <p className="text-sm text-gray-400 mt-1">{panel.description}</p>
+                            )}
+                            <div className="flex flex-wrap gap-2 mt-2 text-xs text-gray-500">
+                              <span>{panel.categories?.length || 0} categories</span>
+                              <span>|</span>
+                              <span>Max {panel.limits?.maxTicketsPerUser || 1} per user</span>
+                              {panel.forms?.length > 0 && (
+                                <>
+                                  <span>|</span>
+                                  <span>{panel.forms.length} form fields</span>
+                                </>
+                              )}
+                              {panel.automations?.length > 0 && (
+                                <>
+                                  <span>|</span>
+                                  <span>{panel.automations.length} automations</span>
+                                </>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-600 mt-2">
+                              Created {new Date(panel.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={() => { setEditingPanel(panel); setShowPanelBuilder(true); }}
+                              className="bg-discord-accent hover:bg-discord-accent/80 px-3 py-1 rounded-lg text-sm transition"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (!confirm('Are you sure you want to delete this panel?')) return;
+                                const res = await fetch(`/api/guilds/${params.guildId}/ticket-panels/${panel._id}`, {
+                                  method: 'DELETE'
+                                });
+                                if (res.ok) {
+                                  setTicketPanels(ticketPanels.filter(p => p._id !== panel._id));
+                                  showMessage('success', 'Panel deleted');
+                                }
+                              }}
+                              className="bg-discord-red hover:bg-discord-red/80 px-3 py-1 rounded-lg text-sm transition"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Panel categories preview */}
+                        {panel.categories?.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-gray-700">
+                            <p className="text-xs text-gray-400 mb-2">Categories:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {panel.categories.map(cat => (
+                                <span key={cat.id} className="px-2 py-1 bg-discord-darker rounded text-xs">
+                                  {cat.emoji} {cat.name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    <p>No ticket panels configured.</p>
+                    <p className="text-sm mt-1">Click "Create Panel" to set up your first ticket panel.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Panel Builder Modal */}
+            {showPanelBuilder && (
+              <TicketPanelBuilder
+                panel={editingPanel}
+                onSave={async (panelData) => {
+                  setSaving(true);
+                  try {
+                    const url = editingPanel?._id
+                      ? `/api/guilds/${params.guildId}/ticket-panels/${editingPanel._id}`
+                      : `/api/guilds/${params.guildId}/ticket-panels`;
+                    const method = editingPanel?._id ? 'PUT' : 'POST';
+
+                    const res = await fetch(url, {
+                      method,
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(panelData)
+                    });
+
+                    if (res.ok) {
+                      const savedPanel = await res.json();
+                      if (editingPanel?._id) {
+                        setTicketPanels(ticketPanels.map(p => p._id === savedPanel._id ? savedPanel : p));
+                      } else {
+                        setTicketPanels([savedPanel, ...ticketPanels]);
+                      }
+                      setShowPanelBuilder(false);
+                      setEditingPanel(null);
+                      showMessage('success', editingPanel?._id ? 'Panel updated' : 'Panel created');
+                    } else {
+                      showMessage('error', 'Failed to save panel');
+                    }
+                  } catch (error) {
+                    showMessage('error', 'Failed to save panel');
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+                onCancel={() => { setShowPanelBuilder(false); setEditingPanel(null); }}
+                channels={discordChannels}
+                roles={discordRoles}
+                categories={discordCategories}
+                allPanels={ticketPanels}
+                saving={saving}
+              />
+            )}
           </div>
         )}
 

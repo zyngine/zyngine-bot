@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
 import { TicketPanel, ActivityLog } from '@/lib/schemas';
 
-// Get all ticket panels for a guild
+// Get a specific ticket panel
 export async function GET(request, { params }) {
   try {
     const session = await getServerSession();
@@ -13,18 +13,24 @@ export async function GET(request, { params }) {
 
     await connectDB();
 
-    const panels = await TicketPanel.find({ guildId: params.guildId })
-      .sort({ createdAt: -1 });
+    const panel = await TicketPanel.findOne({
+      _id: params.panelId,
+      guildId: params.guildId
+    });
 
-    return NextResponse.json(panels);
+    if (!panel) {
+      return NextResponse.json({ error: 'Panel not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(panel);
   } catch (error) {
-    console.error('Error fetching ticket panels:', error);
+    console.error('Error fetching ticket panel:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// Create a new ticket panel
-export async function POST(request, { params }) {
+// Update a ticket panel
+export async function PUT(request, { params }) {
   try {
     const session = await getServerSession();
     if (!session) {
@@ -35,7 +41,7 @@ export async function POST(request, { params }) {
 
     const body = await request.json();
 
-    // Generate IDs for categories and forms if not provided
+    // Generate IDs for new categories and forms
     if (body.categories) {
       body.categories = body.categories.map(cat => ({
         ...cat,
@@ -61,17 +67,20 @@ export async function POST(request, { params }) {
       }));
     }
 
-    const panel = new TicketPanel({
-      guildId: params.guildId,
-      ...body
-    });
+    const panel = await TicketPanel.findOneAndUpdate(
+      { _id: params.panelId, guildId: params.guildId },
+      { $set: { ...body, updatedAt: new Date() } },
+      { new: true }
+    );
 
-    await panel.save();
+    if (!panel) {
+      return NextResponse.json({ error: 'Panel not found' }, { status: 404 });
+    }
 
-    // Log the creation
+    // Log the update
     await ActivityLog.create({
       guildId: params.guildId,
-      action: 'panel_created',
+      action: 'panel_updated',
       performedBy: session.user?.id,
       performedByUsername: session.user?.name,
       panelId: panel._id,
@@ -80,7 +89,42 @@ export async function POST(request, { params }) {
 
     return NextResponse.json(panel);
   } catch (error) {
-    console.error('Error creating ticket panel:', error);
+    console.error('Error updating ticket panel:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// Delete a ticket panel
+export async function DELETE(request, { params }) {
+  try {
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await connectDB();
+
+    const panel = await TicketPanel.findOneAndDelete({
+      _id: params.panelId,
+      guildId: params.guildId
+    });
+
+    if (!panel) {
+      return NextResponse.json({ error: 'Panel not found' }, { status: 404 });
+    }
+
+    // Log the deletion
+    await ActivityLog.create({
+      guildId: params.guildId,
+      action: 'panel_deleted',
+      performedBy: session.user?.id,
+      performedByUsername: session.user?.name,
+      details: { panelName: panel.name }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting ticket panel:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

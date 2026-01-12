@@ -7,6 +7,10 @@ module.exports = {
       await handleCommand(interaction, client);
     } else if (interaction.isButton()) {
       await handleButton(interaction, client);
+    } else if (interaction.isStringSelectMenu()) {
+      await handleSelectMenu(interaction, client);
+    } else if (interaction.isModalSubmit()) {
+      await handleModalSubmit(interaction, client);
     } else if (interaction.isAutocomplete()) {
       await handleAutocomplete(interaction, client);
     }
@@ -59,17 +63,54 @@ async function handleCommand(interaction, client) {
 }
 
 async function handleButton(interaction, client) {
-  const [action, ...params] = interaction.customId.split(':');
+  const customId = interaction.customId;
 
-  if (action === 'approve_request' || action === 'deny_request') {
+  // Handle role request buttons
+  if (customId.startsWith('approve_request:') || customId.startsWith('deny_request:')) {
+    const [action, requestId] = customId.split(':');
     const { handleRequestButton } = require('../utils/requestHandler');
-    await handleRequestButton(interaction, action, params[0]);
-  } else if (action === 'buttonrole') {
+    await handleRequestButton(interaction, action, requestId);
+    return;
+  }
+
+  // Handle button roles
+  if (customId.startsWith('buttonrole:')) {
+    const [, roleId] = customId.split(':');
     const { handleButtonRole } = require('../utils/buttonRoleHandler');
-    await handleButtonRole(interaction, params[0]);
-  } else if (action === 'ticket_create' || action === 'ticket_close' || action === 'ticket_claim') {
+    await handleButtonRole(interaction, roleId);
+    return;
+  }
+
+  // Handle all ticket-related buttons
+  if (
+    customId.startsWith('ticket_') ||
+    customId.startsWith('feedback_')
+  ) {
     const { handleTicketButton } = require('../utils/ticketHandler');
     await handleTicketButton(interaction);
+    return;
+  }
+}
+
+async function handleSelectMenu(interaction, client) {
+  const customId = interaction.customId;
+
+  // Handle ticket dropdown category selection
+  if (customId.startsWith('ticket_dropdown_')) {
+    const { handleTicketDropdown } = require('../utils/ticketHandler');
+    await handleTicketDropdown(interaction);
+    return;
+  }
+}
+
+async function handleModalSubmit(interaction, client) {
+  const customId = interaction.customId;
+
+  // Handle ticket form submission
+  if (customId.startsWith('ticket_form_')) {
+    const { handleTicketFormSubmit } = require('../utils/ticketHandler');
+    await handleTicketFormSubmit(interaction);
+    return;
   }
 }
 

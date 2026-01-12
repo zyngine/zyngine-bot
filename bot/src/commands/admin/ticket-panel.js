@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
 const { TicketPanel } = require('../../schemas');
 const { successEmbed, errorEmbed, infoEmbed, COLORS } = require('../../utils/embeds');
+const { sendPanelMessage } = require('../../utils/ticketHandler');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -51,16 +52,60 @@ module.exports = {
         .addChannelTypes(ChannelType.GuildText)
         .setRequired(false)))
     .addSubcommand(sub => sub
+      .setName('deploy')
+      .setDescription('Deploy a panel created from the dashboard')
+      .addStringOption(o => o
+        .setName('panel-id')
+        .setDescription('The panel ID to deploy')
+        .setRequired(true)
+        .setAutocomplete(true))
+      .addChannelOption(o => o
+        .setName('channel')
+        .setDescription('Channel to send the panel to (uses configured channel if not specified)')
+        .addChannelTypes(ChannelType.GuildText)
+        .setRequired(false)))
+    .addSubcommand(sub => sub
       .setName('delete')
       .setDescription('Delete a ticket panel')
       .addStringOption(o => o
         .setName('panel-id')
         .setDescription('The panel ID to delete')
-        .setRequired(true)))
+        .setRequired(true)
+        .setAutocomplete(true)))
     .addSubcommand(sub => sub
       .setName('list')
-      .setDescription('List all ticket panels')),
+      .setDescription('List all ticket panels'))
+    .addSubcommand(sub => sub
+      .setName('refresh')
+      .setDescription('Refresh/resend a panel message')
+      .addStringOption(o => o
+        .setName('panel-id')
+        .setDescription('The panel ID to refresh')
+        .setRequired(true)
+        .setAutocomplete(true))
+      .addChannelOption(o => o
+        .setName('channel')
+        .setDescription('New channel for the panel (optional)')
+        .addChannelTypes(ChannelType.GuildText)
+        .setRequired(false))),
   cooldown: 5,
+
+  // Autocomplete for panel IDs
+  async autocomplete(interaction) {
+    const focused = interaction.options.getFocused().toLowerCase();
+    const panels = await TicketPanel.find({ guildId: interaction.guild.id });
+
+    const filtered = panels
+      .filter(p => p.name.toLowerCase().includes(focused) || p._id.toString().includes(focused))
+      .slice(0, 25);
+
+    await interaction.respond(
+      filtered.map(p => ({
+        name: `${p.name} (${p.categories?.length || 0} categories)`,
+        value: p._id.toString()
+      }))
+    );
+  },
 
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
@@ -87,25 +132,22 @@ module.exports = {
       }
 
       try {
-        // Create the panel embed
-        const panelEmbed = new EmbedBuilder()
-          .setColor(COLORS.PRIMARY)
-          .setTitle(name)
-          .setDescription(description)
-          .addFields(
-            { name: 'Category', value: categoryName, inline: true },
-            { name: 'How to Open', value: 'Click the button below to create a ticket.', inline: false }
-          )
-          .setTimestamp()
-          .setFooter({ text: 'Zyngine Bot - Ticket System' });
-
-        // Create a temporary panel document to get the ID
+        // Create the panel
         const panel = new TicketPanel({
           guildId: interaction.guild.id,
           channelId: channel.id,
-          messageId: 'pending',
           name,
           description,
+          embed: {
+            title: name,
+            description: description,
+            color: COLORS.PRIMARY
+          },
+          button: {
+            label: 'Open Ticket',
+            emoji: emoji,
+            style: 'Primary'
+          },
           categories: [{
             id: categoryName.toLowerCase().replace(/\s+/g, '-'),
             name: categoryName,
@@ -114,38 +156,31 @@ module.exports = {
             staffRoles: staffRole ? [staffRole.id] : [],
             welcomeMessage: `Thank you for creating a ${categoryName} ticket! A staff member will be with you shortly.`
           }],
+          permissions: {
+            supportRoles: staffRole ? [staffRole.id] : []
+          },
           settings: {
             categoryId: ticketCategory?.id || null,
             namingScheme: 'ticket-{number}',
-            maxTicketsPerUser: 1,
-            autoCloseHours: 0,
-            transcriptChannelId: transcriptChannel?.id || null,
-            logChannelId: logChannel?.id || null
+            autoCloseHours: 0
+          },
+          transcripts: {
+            enabled: true,
+            channelId: transcriptChannel?.id || null,
+            dmToUser: true,
+            format: 'html'
+          },
+          logging: {
+            enabled: true,
+            channelId: logChannel?.id || null
           }
         });
 
         // Save to get the ID
         await panel.save();
 
-        // Create the button with the panel ID
-        const buttonRow = new ActionRowBuilder()
-          .addComponents(
-            new ButtonBuilder()
-              .setCustomId(`ticket_create_${panel._id}`)
-              .setLabel('Open Ticket')
-              .setStyle(ButtonStyle.Primary)
-              .setEmoji(emoji)
-          );
-
         // Send the panel message
-        const panelMessage = await channel.send({
-          embeds: [panelEmbed],
-          components: [buttonRow]
-        });
-
-        // Update the panel with the message ID
-        panel.messageId = panelMessage.id;
-        await panel.save();
+        await sendPanelMessage(channel, panel);
 
         const successEmb = successEmbed(
           'Ticket Panel Created',
@@ -169,6 +204,117 @@ module.exports = {
       }
     }
 
+    if (sub === 'deploy') {
+      await interaction.deferReply({ ephemeral: true });
+
+      const panelId = interaction.options.getString('panel-id');
+      const targetChannel = interaction.options.getChannel('channel');
+
+      try {
+        const panel = await TicketPanel.findOne({
+          _id: panelId,
+          guildId: interaction.guild.id
+        });
+
+        if (!panel) {
+          return interaction.editReply({
+            embeds: [errorEmbed('Not Found', 'No panel found with that ID in this server.')]
+          });
+        }
+
+        const channel = targetChannel || interaction.guild.channels.cache.get(panel.channelId);
+        if (!channel) {
+          return interaction.editReply({
+            embeds: [errorEmbed('Error', 'Could not find the target channel. Please specify a channel.')]
+          });
+        }
+
+        // Check bot permissions
+        const botPerms = channel.permissionsFor(interaction.guild.members.me);
+        if (!botPerms.has([PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks])) {
+          return interaction.editReply({
+            embeds: [errorEmbed('Permission Error', 'I need Send Messages and Embed Links permissions in that channel.')]
+          });
+        }
+
+        // Update channel ID if different
+        if (targetChannel && targetChannel.id !== panel.channelId) {
+          panel.channelId = targetChannel.id;
+        }
+
+        // Send the panel message
+        await sendPanelMessage(channel, panel);
+
+        return interaction.editReply({
+          embeds: [successEmbed('Panel Deployed', `Panel **${panel.name}** has been deployed to ${channel}.`)]
+        });
+      } catch (error) {
+        console.error('Error deploying ticket panel:', error);
+        return interaction.editReply({
+          embeds: [errorEmbed('Error', 'Failed to deploy ticket panel. Please try again.')]
+        });
+      }
+    }
+
+    if (sub === 'refresh') {
+      await interaction.deferReply({ ephemeral: true });
+
+      const panelId = interaction.options.getString('panel-id');
+      const newChannel = interaction.options.getChannel('channel');
+
+      try {
+        const panel = await TicketPanel.findOne({
+          _id: panelId,
+          guildId: interaction.guild.id
+        });
+
+        if (!panel) {
+          return interaction.editReply({
+            embeds: [errorEmbed('Not Found', 'No panel found with that ID in this server.')]
+          });
+        }
+
+        // Try to delete old message
+        if (panel.messageId) {
+          try {
+            const oldChannel = interaction.guild.channels.cache.get(panel.channelId);
+            if (oldChannel) {
+              const oldMessage = await oldChannel.messages.fetch(panel.messageId).catch(() => null);
+              if (oldMessage) {
+                await oldMessage.delete();
+              }
+            }
+          } catch (err) {
+            // Message might already be deleted
+          }
+        }
+
+        // Update channel if specified
+        const channel = newChannel || interaction.guild.channels.cache.get(panel.channelId);
+        if (!channel) {
+          return interaction.editReply({
+            embeds: [errorEmbed('Error', 'Could not find the target channel. Please specify a channel.')]
+          });
+        }
+
+        if (newChannel) {
+          panel.channelId = newChannel.id;
+        }
+
+        // Send new panel message
+        await sendPanelMessage(channel, panel);
+
+        return interaction.editReply({
+          embeds: [successEmbed('Panel Refreshed', `Panel **${panel.name}** has been refreshed in ${channel}.`)]
+        });
+      } catch (error) {
+        console.error('Error refreshing ticket panel:', error);
+        return interaction.editReply({
+          embeds: [errorEmbed('Error', 'Failed to refresh ticket panel. Please try again.')]
+        });
+      }
+    }
+
     if (sub === 'delete') {
       await interaction.deferReply({ ephemeral: true });
 
@@ -187,16 +333,18 @@ module.exports = {
         }
 
         // Try to delete the panel message
-        try {
-          const channel = interaction.guild.channels.cache.get(panel.channelId);
-          if (channel) {
-            const message = await channel.messages.fetch(panel.messageId).catch(() => null);
-            if (message) {
-              await message.delete();
+        if (panel.messageId) {
+          try {
+            const channel = interaction.guild.channels.cache.get(panel.channelId);
+            if (channel) {
+              const message = await channel.messages.fetch(panel.messageId).catch(() => null);
+              if (message) {
+                await message.delete();
+              }
             }
+          } catch (err) {
+            // Message might already be deleted
           }
-        } catch (err) {
-          // Message might already be deleted
         }
 
         // Delete from database
@@ -220,7 +368,7 @@ module.exports = {
 
       if (!panels.length) {
         return interaction.editReply({
-          embeds: [infoEmbed('No Panels', 'No ticket panels have been created yet. Use `/ticket-panel create` to create one.')]
+          embeds: [infoEmbed('No Panels', 'No ticket panels have been created yet.\n\nYou can create panels:\n• From the **dashboard** at your web panel\n• Using `/ticket-panel create` command')]
         });
       }
 
@@ -229,21 +377,32 @@ module.exports = {
         .setTitle('Ticket Panels')
         .setDescription(`Found ${panels.length} ticket panel(s) in this server.`)
         .setTimestamp()
-        .setFooter({ text: 'Zyngine Bot' });
+        .setFooter({ text: 'Use /ticket-panel deploy to send a panel to a channel' });
 
-      for (const panel of panels) {
+      for (const panel of panels.slice(0, 10)) {
         const channel = interaction.guild.channels.cache.get(panel.channelId);
-        const categories = panel.categories.map(c => c.name).join(', ') || 'None';
+        const categories = panel.categories?.map(c => `${c.emoji || '📝'} ${c.name}`).join(', ') || 'None';
+        const hasMessage = panel.messageId ? '✅' : '⚠️ Not deployed';
+        const style = panel.style?.type || 'channel';
 
         embed.addFields({
-          name: panel.name,
+          name: `${panel.name} ${hasMessage === '✅' ? '' : '(Not Deployed)'}`,
           value: [
             `**ID:** \`${panel._id}\``,
-            `**Channel:** ${channel ? `<#${channel.id}>` : 'Unknown'}`,
+            `**Channel:** ${channel ? `<#${channel.id}>` : 'Not set'}`,
+            `**Style:** ${style.charAt(0).toUpperCase() + style.slice(1)}`,
             `**Categories:** ${categories}`,
-            `**Created:** <t:${Math.floor(panel.createdAt.getTime() / 1000)}:R>`
+            `**Forms:** ${panel.forms?.length || 0} global, ${panel.categories?.reduce((acc, c) => acc + (c.forms?.length || 0), 0) || 0} per-category`,
+            `**Automations:** ${panel.automations?.length || 0}`
           ].join('\n'),
-          inline: true
+          inline: false
+        });
+      }
+
+      if (panels.length > 10) {
+        embed.addFields({
+          name: '\u200b',
+          value: `*...and ${panels.length - 10} more panels. View all in the dashboard.*`
         });
       }
 
