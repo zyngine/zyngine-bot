@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #1a1a2e;
+  color: #ffffff;
+}
+
+.btn-primary {
+  @apply bg-discord-accent hover:bg-opacity-80 text-white font-medium py-2 px-4 rounded-lg transition-all;
+}
+
+.card {
+  @apply bg-discord-darker rounded-lg p-6 shadow-lg;
+}
