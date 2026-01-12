@@ -67,6 +67,9 @@ async function handleButton(interaction, client) {
   } else if (action === 'buttonrole') {
     const { handleButtonRole } = require('../utils/buttonRoleHandler');
     await handleButtonRole(interaction, params[0]);
+  } else if (action === 'ticket_create' || action === 'ticket_close' || action === 'ticket_claim') {
+    const { handleTicketButton } = require('../utils/ticketHandler');
+    await handleTicketButton(interaction);
   }
 }
 

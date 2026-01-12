@@ -66,5 +66,78 @@ const roleRequestSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Ticket Schema
+const ticketSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  channelId: { type: String, required: true, unique: true },
+  userId: { type: String, required: true },
+  username: { type: String },
+  userAvatar: { type: String },
+  ticketNumber: { type: Number, required: true },
+  category: { type: String, default: 'general' },
+  subject: { type: String },
+  status: {
+    type: String,
+    enum: ['open', 'closed', 'archived'],
+    default: 'open',
+    index: true
+  },
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high', 'urgent'],
+    default: 'medium'
+  },
+  claimedBy: { type: String },
+  claimedByUsername: { type: String },
+  closedBy: { type: String },
+  closedByUsername: { type: String },
+  closedAt: { type: Date },
+  closeReason: { type: String },
+  participants: [{
+    userId: { type: String },
+    username: { type: String },
+    addedAt: { type: Date, default: Date.now }
+  }],
+  transcript: { type: String },
+  createdAt: { type: Date, default: Date.now, index: true },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// Ticket Panel Schema
+const ticketPanelSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  channelId: { type: String, required: true },
+  messageId: { type: String, required: true },
+  name: { type: String, required: true },
+  description: { type: String },
+  categories: [{
+    id: { type: String, required: true },
+    name: { type: String, required: true },
+    description: { type: String },
+    emoji: { type: String },
+    staffRoles: [{ type: String }],
+    welcomeMessage: { type: String, default: 'Thank you for creating a ticket! Staff will be with you shortly.' }
+  }],
+  settings: {
+    categoryId: { type: String },
+    namingScheme: { type: String, default: 'ticket-{number}' },
+    maxTicketsPerUser: { type: Number, default: 1 },
+    autoCloseHours: { type: Number, default: 0 },
+    transcriptChannelId: { type: String },
+    logChannelId: { type: String },
+    dmTranscript: { type: Boolean, default: true }
+  },
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Ticket Counter Schema
+const ticketCounterSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  count: { type: Number, default: 0 }
+});
+
 export const Guild = mongoose.models.Guild || mongoose.model('Guild', guildSchema);
 export const RoleRequest = mongoose.models.RoleRequest || mongoose.model('RoleRequest', roleRequestSchema);
+export const Ticket = mongoose.models.Ticket || mongoose.model('Ticket', ticketSchema);
+export const TicketPanel = mongoose.models.TicketPanel || mongoose.model('TicketPanel', ticketPanelSchema);
+export const TicketCounter = mongoose.models.TicketCounter || mongoose.model('TicketCounter', ticketCounterSchema);

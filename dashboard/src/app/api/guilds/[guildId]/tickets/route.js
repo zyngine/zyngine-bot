@@ -1,0 +1,34 @@
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import connectDB from '@/lib/mongodb';
+import { Ticket } from '@/lib/schemas';
+
+// Get all tickets for a guild
+export async function GET(request, { params }) {
+  try {
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await connectDB();
+
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const limit = parseInt(searchParams.get('limit')) || 50;
+
+    const query = { guildId: params.guildId };
+    if (status) {
+      query.status = status;
+    }
+
+    const tickets = await Ticket.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit);
+
+    return NextResponse.json(tickets);
+  } catch (error) {
+    console.error('Error fetching tickets:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

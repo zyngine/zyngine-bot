@@ -129,7 +129,8 @@ const activityLogSchema = new mongoose.Schema({
       'autorole_given', 'selfrole_given', 'selfrole_removed',
       'reactionrole_given', 'reactionrole_removed',
       'buttonrole_given', 'buttonrole_removed',
-      'config_updated', 'tier_created', 'tier_updated'
+      'config_updated', 'tier_created', 'tier_updated',
+      'ticket_created', 'ticket_closed', 'ticket_claimed'
     ],
     required: true
   },
@@ -165,11 +166,99 @@ const userStatsSchema = new mongoose.Schema({
 });
 
 userStatsSchema.index({ guildId: 1, odId: 1 }, { unique: true });
+// Ticket Schema
+const ticketSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  channelId: { type: String, required: true, unique: true },
+  userId: { type: String, required: true, index: true },
+  username: { type: String },
+  ticketNumber: { type: Number, required: true },
+  category: { type: String },
+  subject: { type: String },
+  status: {
+    type: String,
+    enum: ['open', 'closed', 'archived'],
+    default: 'open',
+    index: true
+  },
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high', 'urgent'],
+    default: 'medium'
+  },
+  claimedBy: { type: String },
+  claimedByUsername: { type: String },
+  claimedAt: { type: Date },
+  closedBy: { type: String },
+  closedByUsername: { type: String },
+  closedAt: { type: Date },
+  closeReason: { type: String },
+  participants: [{
+    userId: { type: String, required: true },
+    username: { type: String },
+    addedAt: { type: Date, default: Date.now },
+    addedBy: { type: String }
+  }],
+  transcript: { type: String },
+  panelId: { type: mongoose.Schema.Types.ObjectId, ref: 'TicketPanel' },
+  createdAt: { type: Date, default: Date.now, index: true },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+ticketSchema.index({ guildId: 1, ticketNumber: 1 }, { unique: true });
+
+ticketSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
+// Ticket Panel Schema
+const ticketPanelSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  channelId: { type: String, required: true },
+  messageId: { type: String, required: true },
+  name: { type: String, required: true },
+  description: { type: String },
+  categories: [{
+    id: { type: String, required: true },
+    name: { type: String, required: true },
+    description: { type: String },
+    emoji: { type: String },
+    staffRoles: [{ type: String }],
+    welcomeMessage: { type: String, default: 'Thank you for creating a ticket! A staff member will be with you shortly.' }
+  }],
+  settings: {
+    categoryId: { type: String },
+    namingScheme: { type: String, default: 'ticket-{number}' },
+    maxTicketsPerUser: { type: Number, default: 1 },
+    autoCloseHours: { type: Number, default: 0 },
+    transcriptChannelId: { type: String },
+    logChannelId: { type: String }
+  },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+ticketPanelSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
+// Ticket Counter Schema
+const ticketCounterSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  count: { type: Number, default: 0 }
+});
+
+
 
 module.exports = {
   Guild: mongoose.model('Guild', guildSchema),
   RoleRequest: mongoose.model('RoleRequest', roleRequestSchema),
   ActivityLog: mongoose.model('ActivityLog', activityLogSchema),
   TempRole: mongoose.model('TempRole', tempRoleSchema),
-  UserStats: mongoose.model('UserStats', userStatsSchema)
+  UserStats: mongoose.model('UserStats', userStatsSchema),
+  Ticket: mongoose.model('Ticket', ticketSchema),
+  TicketPanel: mongoose.model('TicketPanel', ticketPanelSchema),
+  TicketCounter: mongoose.model('TicketCounter', ticketCounterSchema)
 };

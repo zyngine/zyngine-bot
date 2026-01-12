@@ -12,8 +12,11 @@ export default function GuildDashboard() {
   const [guild, setGuild] = useState(null);
   const [guildInfo, setGuildInfo] = useState(null);
   const [requests, setRequests] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [ticketPanels, setTicketPanels] = useState([]);
   const [discordRoles, setDiscordRoles] = useState([]);
   const [discordChannels, setDiscordChannels] = useState([]);
+  const [discordCategories, setDiscordCategories] = useState([]);
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -99,6 +102,18 @@ export default function GuildDashboard() {
       const channelsRes = await fetch(`/api/discord/guilds/${params.guildId}/channels`);
       if (channelsRes.ok) {
         setDiscordChannels(await channelsRes.json());
+      }
+
+      // Fetch tickets
+      const ticketsRes = await fetch(`/api/guilds/${params.guildId}/tickets`);
+      if (ticketsRes.ok) {
+        setTickets(await ticketsRes.json());
+      }
+
+      // Fetch ticket panels
+      const panelsRes = await fetch(`/api/guilds/${params.guildId}/ticket-panels`);
+      if (panelsRes.ok) {
+        setTicketPanels(await panelsRes.json());
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -314,7 +329,7 @@ export default function GuildDashboard() {
 
         {/* Tabs */}
         <div className="flex gap-4 mb-6 border-b border-gray-700 pb-4 overflow-x-auto">
-          {['overview', 'auto-roles', 'tiers', 'requests', 'settings'].map((tab) => (
+          {['overview', 'auto-roles', 'tiers', 'requests', 'tickets', 'settings'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -646,6 +661,187 @@ export default function GuildDashboard() {
             ) : (
               <p className="text-gray-400">No pending requests.</p>
             )}
+          </div>
+        )}
+
+        {/* Tickets Tab */}
+        {activeTab === 'tickets' && (
+          <div className="space-y-6">
+            {/* Ticket Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="card">
+                <h3 className="text-gray-400 text-sm mb-1">Open Tickets</h3>
+                <p className="text-3xl font-bold text-discord-green">
+                  {tickets.filter(t => t.status === 'open').length}
+                </p>
+              </div>
+              <div className="card">
+                <h3 className="text-gray-400 text-sm mb-1">Closed Tickets</h3>
+                <p className="text-3xl font-bold">
+                  {tickets.filter(t => t.status === 'closed').length}
+                </p>
+              </div>
+              <div className="card">
+                <h3 className="text-gray-400 text-sm mb-1">Total Tickets</h3>
+                <p className="text-3xl font-bold">{tickets.length}</p>
+              </div>
+              <div className="card">
+                <h3 className="text-gray-400 text-sm mb-1">Ticket Panels</h3>
+                <p className="text-3xl font-bold">{ticketPanels.length}</p>
+              </div>
+            </div>
+
+            {/* Open Tickets */}
+            <div className="card">
+              <h2 className="text-xl font-semibold mb-4">Open Tickets</h2>
+              {tickets.filter(t => t.status === 'open').length > 0 ? (
+                <div className="space-y-3">
+                  {tickets.filter(t => t.status === 'open').map((ticket) => (
+                    <div key={ticket._id} className="bg-discord-dark p-4 rounded-lg">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">#{ticket.ticketNumber}</span>
+                            <span className={`px-2 py-0.5 rounded text-xs ${
+                              ticket.priority === 'urgent' ? 'bg-discord-red/20 text-discord-red' :
+                              ticket.priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                              ticket.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                              'bg-gray-500/20 text-gray-400'
+                            }`}>
+                              {ticket.priority}
+                            </span>
+                            {ticket.claimedBy && (
+                              <span className="px-2 py-0.5 rounded text-xs bg-discord-accent/20 text-discord-accent">
+                                Claimed by {ticket.claimedByUsername}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-400 mt-1">
+                            Created by: {ticket.username || ticket.userId}
+                          </p>
+                          {ticket.subject && (
+                            <p className="text-sm text-gray-300 mt-1">{ticket.subject}</p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            {ticket.category} | {new Date(ticket.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={async () => {
+                              const res = await fetch(`/api/guilds/${params.guildId}/tickets/${ticket._id}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ status: 'closed' })
+                              });
+                              if (res.ok) {
+                                setTickets(tickets.map(t =>
+                                  t._id === ticket._id ? { ...t, status: 'closed', closedAt: new Date() } : t
+                                ));
+                                showMessage('success', 'Ticket closed');
+                              }
+                            }}
+                            className="bg-discord-red hover:bg-discord-red/80 px-3 py-1 rounded-lg text-sm transition"
+                          >
+                            Close
+                          </button>
+                        </div>
+                      </div>
+                      {ticket.participants?.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-700">
+                          <p className="text-xs text-gray-500">
+                            Participants: {ticket.participants.map(p => p.username || p.userId).join(', ')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-400">No open tickets.</p>
+              )}
+            </div>
+
+            {/* Closed Tickets */}
+            <div className="card">
+              <h2 className="text-xl font-semibold mb-4">Recently Closed Tickets</h2>
+              {tickets.filter(t => t.status === 'closed').slice(0, 10).length > 0 ? (
+                <div className="space-y-3">
+                  {tickets.filter(t => t.status === 'closed').slice(0, 10).map((ticket) => (
+                    <div key={ticket._id} className="bg-discord-dark p-4 rounded-lg opacity-75">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">#{ticket.ticketNumber}</span>
+                            <span className="px-2 py-0.5 rounded text-xs bg-gray-500/20 text-gray-400">
+                              Closed
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-400 mt-1">
+                            Created by: {ticket.username || ticket.userId}
+                          </p>
+                          {ticket.closeReason && (
+                            <p className="text-sm text-gray-500 mt-1 italic">Reason: {ticket.closeReason}</p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            Closed by {ticket.closedByUsername} on {new Date(ticket.closedAt).toLocaleString()}
+                          </p>
+                        </div>
+                        {ticket.transcript && (
+                          <button
+                            onClick={() => {
+                              const blob = new Blob([ticket.transcript], { type: 'text/plain' });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = `ticket-${ticket.ticketNumber}-transcript.txt`;
+                              a.click();
+                            }}
+                            className="bg-discord-accent hover:bg-discord-accent/80 px-3 py-1 rounded-lg text-sm transition"
+                          >
+                            Download Transcript
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-400">No closed tickets.</p>
+              )}
+            </div>
+
+            {/* Ticket Panels */}
+            <div className="card">
+              <h2 className="text-xl font-semibold mb-4">Ticket Panels</h2>
+              <p className="text-gray-400 text-sm mb-4">
+                Use <code className="bg-discord-dark px-2 py-1 rounded">/ticket-panel create</code> in Discord to create ticket panels.
+              </p>
+              {ticketPanels.length > 0 ? (
+                <div className="space-y-3">
+                  {ticketPanels.map((panel) => (
+                    <div key={panel._id} className="bg-discord-dark p-4 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{panel.name}</p>
+                          {panel.description && (
+                            <p className="text-sm text-gray-400">{panel.description}</p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            {panel.categories?.length || 0} categories | Max {panel.settings?.maxTicketsPerUser || 1} tickets per user
+                          </p>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          Created {new Date(panel.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-400">No ticket panels configured.</p>
+              )}
+            </div>
           </div>
         )}
 
