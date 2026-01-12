@@ -177,16 +177,14 @@ async function handleRename(message, ticket, newName) {
   await message.delete().catch(() => {});
 
   // Sanitize channel name - replace spaces with dashes, remove special chars
-  const sanitized = newName
+  const channelName = newName
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')           // Replace spaces with dashes
     .replace(/[^a-z0-9-]/g, '')     // Remove special characters
     .replace(/-+/g, '-')            // Collapse multiple dashes
     .replace(/^-|-$/g, '')          // Remove leading/trailing dashes
-    .substring(0, 80);
-
-  const channelName = `ticket-${ticket.ticketNumber}-${sanitized}`;
+    .substring(0, 100);
   const oldName = message.channel.name;
 
   await message.channel.setName(channelName);
