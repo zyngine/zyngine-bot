@@ -1121,6 +1121,33 @@ export default function GuildDashboard() {
                           </div>
                           <div className="flex gap-2 ml-4">
                             <button
+                              onClick={async () => {
+                                const channelId = prompt('Enter the Channel ID to deploy this panel to:');
+                                if (!channelId) return;
+
+                                showMessage('info', 'Deploying panel...');
+                                const res = await fetch(`/api/guilds/${params.guildId}/ticket-panels/${panel._id}/deploy`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ channelId })
+                                });
+
+                                if (res.ok) {
+                                  showMessage('success', 'Panel deployed to Discord!');
+                                } else {
+                                  const error = await res.json();
+                                  if (error.useCommand) {
+                                    showMessage('error', 'Use /ticket-panel deploy command in Discord');
+                                  } else {
+                                    showMessage('error', error.error || 'Failed to deploy panel');
+                                  }
+                                }
+                              }}
+                              className="bg-discord-green hover:bg-discord-green/80 px-3 py-1 rounded-lg text-sm transition"
+                            >
+                              Deploy
+                            </button>
+                            <button
                               onClick={() => { setEditingPanel(panel); setShowPanelBuilder(true); }}
                               className="bg-discord-accent hover:bg-discord-accent/80 px-3 py-1 rounded-lg text-sm transition"
                             >
@@ -1143,6 +1170,13 @@ export default function GuildDashboard() {
                             </button>
                           </div>
                         </div>
+
+                        {/* Deployment status */}
+                        {panel.deployedChannelId && (
+                          <div className="mt-2 text-xs text-green-400">
+                            Deployed to channel {panel.deployedChannelId}
+                          </div>
+                        )}
 
                         {/* Panel categories preview */}
                         {panel.categories?.length > 0 && (
