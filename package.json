@@ -1,0 +1,37 @@
+{
+  "name": "zyngine-bot",
+  "version": "1.0.0",
+  "description": "Advanced Discord Role Management Bot with Web Dashboard",
+  "private": true,
+  "workspaces": [
+    "bot",
+    "dashboard",
+    "shared"
+  ],
+  "scripts": {
+    "bot": "npm run start --workspace=bot",
+    "bot:dev": "npm run dev --workspace=bot",
+    "dashboard": "npm run start --workspace=dashboard",
+    "dashboard:dev": "npm run dev --workspace=dashboard",
+    "dashboard:build": "npm run build --workspace=dashboard",
+    "install:all": "npm install",
+    "dev": "concurrently \"npm run bot:dev\" \"npm run dashboard:dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/zyngine-bot"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "role-management",
+    "moderation"
+  ],
+  "license": "MIT"
+}
