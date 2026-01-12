@@ -32,10 +32,15 @@ export default function Dashboard() {
       });
       const data = await response.json();
 
-      // Filter to guilds where user has MANAGE_GUILD permission
-      const manageableGuilds = data.filter(guild =>
-        (BigInt(guild.permissions) & BigInt(0x20)) === BigInt(0x20)
-      );
+      // Filter to guilds where user has ADMINISTRATOR or MANAGE_GUILD permission
+      const ADMINISTRATOR = BigInt(0x8);
+      const MANAGE_GUILD = BigInt(0x20);
+
+      const manageableGuilds = data.filter(guild => {
+        const perms = BigInt(guild.permissions);
+        return (perms & ADMINISTRATOR) === ADMINISTRATOR ||
+               (perms & MANAGE_GUILD) === MANAGE_GUILD;
+      });
 
       setGuilds(manageableGuilds);
     } catch (error) {
