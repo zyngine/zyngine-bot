@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const { ModerationCase, ModerationCaseCounter, ModerationConfig } = require('../schemas');
+const { ModerationCase, ModerationCaseCounter, ModerationConfig } = require('../../schemas');
 
 async function getNextCaseNumber(guildId) {
   const counter = await ModerationCaseCounter.findOneAndUpdate(
