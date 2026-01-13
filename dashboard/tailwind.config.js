@@ -7,27 +7,49 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Zyngine brand colors based on logo
+        zyngine: {
+          // Backgrounds - dark navy blues
+          dark: '#0a1628',
+          darker: '#060f1a',
+          light: '#0d1f35',
+          lighter: '#132d4a',
+
+          // Primary cyan/teal accents
+          cyan: '#00D4AA',
+          'cyan-light': '#2EECC6',
+          'cyan-dark': '#00A88A',
+          teal: '#0891B2',
+
+          // Secondary colors
+          green: '#10B981',
+          red: '#EF4444',
+          yellow: '#F59E0B',
+          orange: '#F97316',
+        },
+        // Keep discord colors for compatibility
         discord: {
-          dark: '#0f0f1a',
-          darker: '#0a0a12',
-          light: '#1a1a2e',
-          lighter: '#252542',
-          accent: '#5865F2',
-          'accent-dark': '#4752c4',
-          green: '#57F287',
-          red: '#ED4245',
-          yellow: '#FEE75C',
-          pink: '#EB459E',
-          purple: '#9b59b6',
+          dark: '#0a1628',
+          darker: '#060f1a',
+          light: '#0d1f35',
+          lighter: '#132d4a',
+          accent: '#00D4AA',
+          'accent-dark': '#00A88A',
+          green: '#10B981',
+          red: '#EF4444',
+          yellow: '#F59E0B',
+          pink: '#EC4899',
+          purple: '#8B5CF6',
         },
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'gradient-accent': 'linear-gradient(135deg, #5865F2 0%, #9b59b6 100%)',
-        'gradient-success': 'linear-gradient(135deg, #57F287 0%, #43b581 100%)',
-        'gradient-danger': 'linear-gradient(135deg, #ED4245 0%, #c73e3a 100%)',
-        'gradient-dark': 'linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%)',
+        'gradient-accent': 'linear-gradient(135deg, #00D4AA 0%, #0891B2 100%)',
+        'gradient-success': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+        'gradient-danger': 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+        'gradient-dark': 'linear-gradient(135deg, #0d1f35 0%, #0a1628 100%)',
+        'gradient-glow': 'linear-gradient(135deg, #00D4AA 0%, #2EECC6 50%, #0891B2 100%)',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
@@ -37,6 +59,7 @@ module.exports = {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'shimmer': 'shimmer 2s linear infinite',
         'glow': 'glow 2s ease-in-out infinite alternate',
+        'spin-slow': 'spin 8s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -60,14 +83,15 @@ module.exports = {
           '100%': { backgroundPosition: '200% 0' },
         },
         glow: {
-          '0%': { boxShadow: '0 0 20px rgba(88, 101, 242, 0.3)' },
-          '100%': { boxShadow: '0 0 30px rgba(88, 101, 242, 0.6)' },
+          '0%': { boxShadow: '0 0 20px rgba(0, 212, 170, 0.3)' },
+          '100%': { boxShadow: '0 0 30px rgba(0, 212, 170, 0.6)' },
         },
       },
       boxShadow: {
-        'glow': '0 0 20px rgba(88, 101, 242, 0.3)',
-        'glow-lg': '0 0 40px rgba(88, 101, 242, 0.4)',
-        'inner-glow': 'inset 0 0 20px rgba(88, 101, 242, 0.1)',
+        'glow': '0 0 20px rgba(0, 212, 170, 0.3)',
+        'glow-lg': '0 0 40px rgba(0, 212, 170, 0.4)',
+        'glow-cyan': '0 0 30px rgba(0, 212, 170, 0.5)',
+        'inner-glow': 'inset 0 0 20px rgba(0, 212, 170, 0.1)',
       },
       backdropBlur: {
         xs: '2px',

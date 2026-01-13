@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import {
-  Zap,
+  Cog,
   Shield,
   Ticket,
   Sparkles,
@@ -100,7 +100,7 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="relative">
           <div className="w-16 h-16 rounded-full border-4 border-discord-accent/20 border-t-discord-accent animate-spin"></div>
-          <Zap className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-discord-accent" />
+          <Cog className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-discord-accent gear-spin" />
         </div>
       </div>
     );
@@ -115,7 +115,7 @@ export default function Home() {
         {/* Background Effects */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-discord-accent/20 rounded-full blur-3xl animate-pulse-slow"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-zyngine-teal/20 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
         </div>
 
         <div className="relative max-w-6xl mx-auto text-center">
@@ -230,8 +230,8 @@ export default function Home() {
             <div className="relative">
               <div className="card p-8">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-accent flex items-center justify-center">
-                    <Zap className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 rounded-xl bg-gradient-accent flex items-center justify-center shadow-glow">
+                    <Cog className="w-6 h-6 text-zyngine-darker gear-spin" />
                   </div>
                   <div>
                     <p className="font-semibold">Zyngine Bot</p>
@@ -255,7 +255,7 @@ export default function Home() {
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <div className="card p-12 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-discord-accent/10 to-purple-500/10"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-discord-accent/10 to-zyngine-teal/10"></div>
             <div className="relative">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Level Up Your Server?</h2>
               <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
@@ -268,7 +268,7 @@ export default function Home() {
                   rel="noopener noreferrer"
                   className="btn-primary flex items-center gap-2 text-lg px-8 py-4"
                 >
-                  <Zap className="w-5 h-5" />
+                  <Cog className="w-5 h-5" />
                   Add Zyngine to Your Server
                 </a>
               </div>
@@ -281,10 +281,10 @@ export default function Home() {
       <footer className="py-12 px-6 border-t border-white/5">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-accent flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-accent flex items-center justify-center shadow-glow">
+              <Cog className="w-5 h-5 text-zyngine-darker gear-spin" />
             </div>
-            <span className="font-bold text-lg">Zyngine</span>
+            <span className="font-bold text-lg gradient-text">Zyngine</span>
           </div>
           <p className="text-gray-500 text-sm">
             Made with Claude AI assistance

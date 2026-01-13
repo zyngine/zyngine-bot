@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
 import {
-  Zap,
+  Cog,
   LayoutDashboard,
   LogOut,
   ChevronDown,
@@ -19,10 +19,10 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-16 px-6 flex items-center justify-between border-b border-white/5" style={{ background: 'rgba(10, 10, 18, 0.8)', backdropFilter: 'blur(20px)' }}>
+    <nav className="fixed top-0 left-0 right-0 z-50 h-16 px-6 flex items-center justify-between border-b border-white/5" style={{ background: 'rgba(10, 22, 40, 0.9)', backdropFilter: 'blur(20px)' }}>
       <Link href="/" className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-accent flex items-center justify-center shadow-glow">
-          <Zap className="w-6 h-6 text-white" />
+          <Cog className="w-6 h-6 text-zyngine-darker gear-spin" />
         </div>
         <span className="text-xl font-bold gradient-text">Zyngine</span>
       </Link>
@@ -77,7 +77,7 @@ export default function Navbar() {
                     className="fixed inset-0 z-40"
                     onClick={() => setDropdownOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-56 rounded-xl overflow-hidden z-50 animate-scale-in" style={{ background: 'rgba(15, 15, 26, 0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(88, 101, 242, 0.2)' }}>
+                  <div className="absolute right-0 mt-2 w-56 rounded-xl overflow-hidden z-50 animate-scale-in" style={{ background: 'rgba(10, 22, 40, 0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0, 212, 170, 0.2)' }}>
                     <div className="p-3 border-b border-white/5">
                       <p className="font-medium">{session.user?.name}</p>
                       <p className="text-xs text-gray-500">{session.user?.email}</p>

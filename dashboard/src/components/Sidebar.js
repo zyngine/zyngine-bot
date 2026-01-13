@@ -12,7 +12,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Zap,
+  Cog,
   MessageSquare,
   Gift,
   Star,
@@ -47,15 +47,15 @@ export default function Sidebar({ guildInfo, activeTab, setActiveTab, collapsed,
       <div className="h-16 flex items-center justify-between px-4 border-b border-white/5">
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-accent flex items-center justify-center">
-              <Zap className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-accent flex items-center justify-center shadow-glow">
+              <Cog className="w-6 h-6 text-discord-darker gear-spin" />
             </div>
             <span className="font-bold text-lg gradient-text">Zyngine</span>
           </Link>
         )}
         {collapsed && (
-          <div className="w-10 h-10 mx-auto rounded-xl bg-gradient-accent flex items-center justify-center">
-            <Zap className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 mx-auto rounded-xl bg-gradient-accent flex items-center justify-center shadow-glow">
+            <Cog className="w-6 h-6 text-discord-darker gear-spin" />
           </div>
         )}
         <button

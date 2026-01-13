@@ -35,7 +35,7 @@ import {
   Filter,
   MoreVertical,
   ChevronRight,
-  Zap,
+  Cog,
 } from 'lucide-react';
 
 export default function GuildDashboard() {
@@ -325,7 +325,7 @@ export default function GuildDashboard() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="relative">
           <div className="w-16 h-16 rounded-full border-4 border-discord-accent/20 border-t-discord-accent animate-spin"></div>
-          <Zap className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-discord-accent" />
+          <Cog className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-discord-accent gear-spin" />
         </div>
       </div>
     );
@@ -345,7 +345,7 @@ export default function GuildDashboard() {
       {/* Main Content */}
       <main className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-20' : 'ml-64'}`}>
         {/* Top Bar */}
-        <div className="sticky top-0 z-30 h-16 px-8 flex items-center justify-between border-b border-white/5" style={{ background: 'rgba(10, 10, 18, 0.8)', backdropFilter: 'blur(20px)' }}>
+        <div className="sticky top-0 z-30 h-16 px-8 flex items-center justify-between border-b border-white/5" style={{ background: 'rgba(10, 22, 40, 0.9)', backdropFilter: 'blur(20px)' }}>
           <div>
             <h1 className="text-xl font-bold capitalize">{activeTab.replace('-', ' ')}</h1>
             <p className="text-sm text-gray-500">{guildInfo?.name || 'Server Dashboard'}</p>
