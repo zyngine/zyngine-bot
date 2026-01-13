@@ -1,18 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import dbConnect from '@/lib/mongodb';
+import connectDB from '@/lib/mongodb';
 import { CustomCommand } from '@/lib/schemas';
 
 export async function GET(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { guildId, commandId } = await params;
-    await dbConnect();
+    await connectDB();
 
     const command = await CustomCommand.findOne({ _id: commandId, guildId }).lean();
 
@@ -29,7 +28,7 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -37,7 +36,7 @@ export async function PUT(request, { params }) {
     const { guildId, commandId } = await params;
     const updates = await request.json();
 
-    await dbConnect();
+    await connectDB();
 
     // Check for duplicate name if name is being changed
     if (updates.name) {
@@ -72,13 +71,13 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { guildId, commandId } = await params;
-    await dbConnect();
+    await connectDB();
 
     const result = await CustomCommand.findOneAndDelete({ _id: commandId, guildId });
 

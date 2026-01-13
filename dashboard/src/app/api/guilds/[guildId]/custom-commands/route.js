@@ -1,18 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import dbConnect from '@/lib/mongodb';
+import connectDB from '@/lib/mongodb';
 import { CustomCommand } from '@/lib/schemas';
 
 export async function GET(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { guildId } = await params;
-    await dbConnect();
+    await connectDB();
 
     const commands = await CustomCommand.find({ guildId })
       .sort({ createdAt: -1 })
@@ -27,7 +26,7 @@ export async function GET(request, { params }) {
 
 export async function POST(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -35,7 +34,7 @@ export async function POST(request, { params }) {
     const { guildId } = await params;
     const data = await request.json();
 
-    await dbConnect();
+    await connectDB();
 
     // Check for duplicate command name
     const existing = await CustomCommand.findOne({
@@ -60,7 +59,7 @@ export async function POST(request, { params }) {
       deleteInvocation: data.deleteInvocation || false,
       dmResponse: data.dmResponse || false,
       enabled: data.enabled !== false,
-      createdBy: session.user.id
+      createdBy: session.user?.id
     });
 
     await command.save();

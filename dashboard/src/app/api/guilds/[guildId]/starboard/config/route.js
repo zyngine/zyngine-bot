@@ -1,18 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import dbConnect from '@/lib/mongodb';
+import connectDB from '@/lib/mongodb';
 import { StarboardConfig } from '@/lib/schemas';
 
 export async function GET(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { guildId } = await params;
-    await dbConnect();
+    await connectDB();
 
     let config = await StarboardConfig.findOne({ guildId }).lean();
 
@@ -39,7 +38,7 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -47,7 +46,7 @@ export async function PUT(request, { params }) {
     const { guildId } = await params;
     const updates = await request.json();
 
-    await dbConnect();
+    await connectDB();
 
     const config = await StarboardConfig.findOneAndUpdate(
       { guildId },

@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import dbConnect from '@/lib/mongodb';
+import connectDB from '@/lib/mongodb';
 import { ModerationCase } from '@/lib/schemas';
 
 export async function GET(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -19,7 +18,7 @@ export async function GET(request, { params }) {
     const search = searchParams.get('search') || '';
     const type = searchParams.get('type') || '';
 
-    await dbConnect();
+    await connectDB();
 
     // Build query
     const query = { guildId };
@@ -90,7 +89,7 @@ export async function GET(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -98,7 +97,7 @@ export async function DELETE(request, { params }) {
     const { guildId } = await params;
     const { caseNumber } = await request.json();
 
-    await dbConnect();
+    await connectDB();
 
     const result = await ModerationCase.findOneAndDelete({
       guildId,

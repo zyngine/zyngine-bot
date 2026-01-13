@@ -1,18 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import dbConnect from '@/lib/mongodb';
+import connectDB from '@/lib/mongodb';
 import { Giveaway } from '@/lib/schemas';
 
 export async function GET(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { guildId, giveawayId } = await params;
-    await dbConnect();
+    await connectDB();
 
     const giveaway = await Giveaway.findOne({ _id: giveawayId, guildId }).lean();
 
@@ -29,13 +28,13 @@ export async function GET(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { guildId, giveawayId } = await params;
-    await dbConnect();
+    await connectDB();
 
     const result = await Giveaway.findOneAndDelete({ _id: giveawayId, guildId });
 
