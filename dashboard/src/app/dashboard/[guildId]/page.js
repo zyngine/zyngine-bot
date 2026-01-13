@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import Navbar from '@/components/Navbar';
+import Sidebar from '@/components/Sidebar';
 import TicketPanelBuilder from '@/components/TicketPanelBuilder';
 import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 import StaffLeaderboard from '@/components/StaffLeaderboard';
@@ -13,6 +13,25 @@ import TagsManager from '@/components/TagsManager';
 import BlacklistManager from '@/components/BlacklistManager';
 import AuditLogs from '@/components/AuditLogs';
 import TicketSearch from '@/components/TicketSearch';
+import {
+  Ticket,
+  Users,
+  Shield,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Plus,
+  Trash2,
+  Edit3,
+  Send,
+  Download,
+  Search,
+  Filter,
+  MoreVertical,
+  ChevronRight,
+  Zap,
+} from 'lucide-react';
 
 export default function GuildDashboard() {
   const { data: session, status } = useSession();
@@ -31,6 +50,7 @@ export default function GuildDashboard() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Modal states
   const [showAddAutoRole, setShowAddAutoRole] = useState(false);
@@ -297,134 +317,169 @@ export default function GuildDashboard() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen">
-        <Navbar />
-        <div className="flex items-center justify-center h-[80vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-discord-accent"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-full border-4 border-discord-accent/20 border-t-discord-accent animate-spin"></div>
+          <Zap className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-discord-accent" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <Navbar />
+    <div className="min-h-screen flex">
+      {/* Sidebar */}
+      <Sidebar
+        guildInfo={guildInfo}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        collapsed={sidebarCollapsed}
+        setCollapsed={setSidebarCollapsed}
+      />
 
-      {/* Message Toast */}
-      {message.text && (
-        <div className={`fixed top-20 right-4 px-6 py-3 rounded-lg z-50 ${
-          message.type === 'success' ? 'bg-discord-green' : 'bg-discord-red'
-        }`}>
-          {message.text}
-        </div>
-      )}
-
-      <main className="max-w-7xl mx-auto p-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          {guildInfo?.icon ? (
-            <img
-              src={`https://cdn.discordapp.com/icons/${guildInfo.id}/${guildInfo.icon}.png`}
-              alt={guildInfo.name}
-              className="w-20 h-20 rounded-full"
-            />
-          ) : (
-            <div className="w-20 h-20 rounded-full bg-discord-accent flex items-center justify-center text-3xl font-bold">
-              {guildInfo?.name?.charAt(0) || '?'}
-            </div>
-          )}
+      {/* Main Content */}
+      <main className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-20' : 'ml-64'}`}>
+        {/* Top Bar */}
+        <div className="sticky top-0 z-30 h-16 px-8 flex items-center justify-between border-b border-white/5" style={{ background: 'rgba(10, 10, 18, 0.8)', backdropFilter: 'blur(20px)' }}>
           <div>
-            <h1 className="text-3xl font-bold">{guildInfo?.name || 'Unknown Server'}</h1>
-            <p className="text-gray-400">Server ID: {params.guildId}</p>
+            <h1 className="text-xl font-bold capitalize">{activeTab.replace('-', ' ')}</h1>
+            <p className="text-sm text-gray-500">{guildInfo?.name || 'Server Dashboard'}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="btn-secondary flex items-center gap-2 text-sm">
+              <Search size={16} />
+              Search
+            </button>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-gray-700 pb-4 overflow-x-auto">
-          {[
-            { id: 'overview', label: 'Overview' },
-            { id: 'tickets', label: 'Tickets' },
-            { id: 'analytics', label: 'Analytics' },
-            { id: 'staff', label: 'Staff' },
-            { id: 'auto-roles', label: 'Auto Roles' },
-            { id: 'tiers', label: 'Tiers' },
-            { id: 'requests', label: 'Requests' },
-            { id: 'tools', label: 'Tools' },
-            { id: 'settings', label: 'Settings' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-lg transition whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-discord-accent text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Message Toast */}
+        {message.text && (
+          <div className={`toast ${message.type === 'success' ? 'toast-success' : 'toast-error'}`}>
+            <div className="flex items-center gap-3">
+              {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+              {message.text}
+            </div>
+          </div>
+        )}
+
+        {/* Content Area */}
+        <div className="p-8">
 
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="card">
-                <h3 className="text-gray-400 text-sm mb-1">Open Tickets</h3>
+          <div className="space-y-6 animate-fade-in">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="stat-card group">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-discord-green/20 flex items-center justify-center">
+                    <Ticket className="w-5 h-5 text-discord-green" />
+                  </div>
+                  <span className="badge badge-success">Active</span>
+                </div>
                 <p className="text-3xl font-bold text-discord-green">
                   {tickets.filter(t => t.status === 'open').length}
                 </p>
+                <p className="text-sm text-gray-500 mt-1">Open Tickets</p>
               </div>
-              <div className="card">
-                <h3 className="text-gray-400 text-sm mb-1">Total Tickets</h3>
+
+              <div className="stat-card">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-discord-accent/20 flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-discord-accent" />
+                  </div>
+                </div>
                 <p className="text-3xl font-bold">{tickets.length}</p>
+                <p className="text-sm text-gray-500 mt-1">Total Tickets</p>
               </div>
-              <div className="card">
-                <h3 className="text-gray-400 text-sm mb-1">Ticket Panels</h3>
+
+              <div className="stat-card">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-purple-400" />
+                  </div>
+                </div>
                 <p className="text-3xl font-bold">{ticketPanels.length}</p>
+                <p className="text-sm text-gray-500 mt-1">Ticket Panels</p>
               </div>
-              <div className="card">
-                <h3 className="text-gray-400 text-sm mb-1">Pending Requests</h3>
+
+              <div className="stat-card">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-discord-yellow/20 flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-discord-yellow" />
+                  </div>
+                  {requests.length > 0 && <span className="badge badge-warning">{requests.length}</span>}
+                </div>
                 <p className="text-3xl font-bold">{requests.length}</p>
+                <p className="text-sm text-gray-500 mt-1">Pending Requests</p>
               </div>
             </div>
 
+            {/* Secondary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="card">
-                <h3 className="text-gray-400 text-sm mb-1">Auto Roles</h3>
-                <p className="text-3xl font-bold">{guild?.autoRoles?.length || 0}</p>
+              <div className="stat-card">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-discord-green/20 flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-discord-green" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{guild?.autoRoles?.length || 0}</p>
+                    <p className="text-sm text-gray-500">Auto Roles</p>
+                  </div>
+                </div>
               </div>
-              <div className="card">
-                <h3 className="text-gray-400 text-sm mb-1">Role Tiers</h3>
-                <p className="text-3xl font-bold">{guild?.roleTiers?.length || 0}</p>
+
+              <div className="stat-card">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-discord-accent/20 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-discord-accent" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{guild?.roleTiers?.length || 0}</p>
+                    <p className="text-sm text-gray-500">Role Tiers</p>
+                  </div>
+                </div>
               </div>
-              <div className="card">
-                <h3 className="text-gray-400 text-sm mb-1">Discord Roles</h3>
-                <p className="text-3xl font-bold">{discordRoles.length}</p>
+
+              <div className="stat-card">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-pink-500/20 flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-pink-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{discordRoles.length}</p>
+                    <p className="text-sm text-gray-500">Discord Roles</p>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Quick Actions */}
             <div className="card">
-              <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Quick Actions</h3>
+              </div>
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={() => { setActiveTab('tickets'); setTicketSubTab('panels'); }}
-                  className="btn-primary"
+                  className="btn-primary flex items-center gap-2"
                 >
+                  <Ticket size={18} />
                   Manage Panels
                 </button>
                 <button
                   onClick={() => setActiveTab('analytics')}
-                  className="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg transition"
+                  className="btn-secondary flex items-center gap-2"
                 >
+                  <TrendingUp size={18} />
                   View Analytics
                 </button>
                 <button
                   onClick={() => setActiveTab('staff')}
-                  className="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg transition"
+                  className="btn-secondary flex items-center gap-2"
                 >
+                  <Users size={18} />
                   Staff Leaderboard
                 </button>
               </div>
@@ -432,16 +487,30 @@ export default function GuildDashboard() {
 
             {/* Recent Tickets */}
             <div className="card">
-              <h3 className="text-lg font-semibold mb-4">Recent Tickets</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Recent Tickets</h3>
+                <button
+                  onClick={() => setActiveTab('tickets')}
+                  className="text-sm text-discord-accent hover:text-discord-accent/80 flex items-center gap-1"
+                >
+                  View All <ChevronRight size={16} />
+                </button>
+              </div>
               {tickets.slice(0, 5).length > 0 ? (
                 <div className="space-y-2">
                   {tickets.slice(0, 5).map(ticket => (
-                    <div key={ticket._id} className="flex items-center justify-between bg-discord-dark p-3 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <span className={`w-2 h-2 rounded-full ${ticket.status === 'open' ? 'bg-green-500' : 'bg-gray-500'}`} />
-                        <span className="font-medium">#{ticket.ticketNumber}</span>
-                        <span className="text-gray-400 text-sm">{ticket.username}</span>
-                        {ticket.category && <span className="text-gray-500 text-xs">{ticket.category}</span>}
+                    <div key={ticket._id} className="flex items-center justify-between p-4 rounded-lg transition-all hover:bg-white/5 border border-transparent hover:border-white/10">
+                      <div className="flex items-center gap-4">
+                        <span className={`status-dot ${ticket.status === 'open' ? 'status-online' : 'status-offline'}`} />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">#{ticket.ticketNumber}</span>
+                            {ticket.category && (
+                              <span className="badge badge-primary text-xs">{ticket.category}</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-500">{ticket.username}</p>
+                        </div>
                       </div>
                       <span className="text-xs text-gray-500">
                         {new Date(ticket.createdAt).toLocaleDateString()}
@@ -450,7 +519,10 @@ export default function GuildDashboard() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-400">No tickets yet.</p>
+                <div className="text-center py-8 text-gray-500">
+                  <Ticket className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>No tickets yet</p>
+                </div>
               )}
             </div>
           </div>
@@ -1459,6 +1531,7 @@ export default function GuildDashboard() {
             </div>
           </div>
         )}
+        </div>
       </main>
     </div>
   );
