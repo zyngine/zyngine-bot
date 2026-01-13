@@ -22,6 +22,12 @@ const guildSchema = new mongoose.Schema({
     channelId: { type: String }
   },
 
+  aiWelcome: {
+    enabled: { type: Boolean, default: false },
+    channelId: { type: String },
+    includeServerInfo: { type: Boolean, default: true }
+  },
+
   roleTiers: [{
     name: { type: String, required: true },
     level: { type: Number, required: true },

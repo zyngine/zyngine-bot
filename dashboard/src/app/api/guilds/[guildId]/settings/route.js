@@ -24,6 +24,11 @@ export async function GET(request, { params }) {
           message: 'Welcome to {server}! You have been assigned the {roles} role(s).',
           channelId: ''
         },
+        aiWelcome: {
+          enabled: false,
+          channelId: '',
+          includeServerInfo: true
+        },
         notifications: {
           requestChannelId: '',
           logChannelId: '',
@@ -38,6 +43,7 @@ export async function GET(request, { params }) {
       guildName: guild.guildName,
       requestCooldown: guild.requestCooldown,
       welcomeMessage: guild.welcomeMessage,
+      aiWelcome: guild.aiWelcome || { enabled: false, channelId: '', includeServerInfo: true },
       notifications: guild.notifications
     });
   } catch (error) {
@@ -70,6 +76,10 @@ export async function PUT(request, { params }) {
       updateData.welcomeMessage = body.welcomeMessage;
     }
 
+    if (body.aiWelcome) {
+      updateData.aiWelcome = body.aiWelcome;
+    }
+
     if (body.notifications) {
       updateData.notifications = body.notifications;
     }
@@ -89,6 +99,7 @@ export async function PUT(request, { params }) {
       guildName: guild.guildName,
       requestCooldown: guild.requestCooldown,
       welcomeMessage: guild.welcomeMessage,
+      aiWelcome: guild.aiWelcome || { enabled: false, channelId: '', includeServerInfo: true },
       notifications: guild.notifications
     });
   } catch (error) {

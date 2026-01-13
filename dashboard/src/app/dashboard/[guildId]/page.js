@@ -1393,6 +1393,59 @@ export default function GuildDashboard() {
                 )}
               </div>
 
+              {/* AI Welcome Messages */}
+              <div className="border-t border-gray-700 pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <input
+                    type="checkbox"
+                    checked={settings.aiWelcome?.enabled || false}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      aiWelcome: { ...settings.aiWelcome, enabled: e.target.checked }
+                    })}
+                    className="w-4 h-4"
+                  />
+                  <label className="text-sm font-medium">Enable AI Welcome Messages</label>
+                  <span className="px-2 py-0.5 bg-discord-accent/20 text-discord-accent text-xs rounded">AI Powered</span>
+                </div>
+
+                <p className="text-sm text-gray-400 mb-4">
+                  When enabled, new members will receive unique welcome messages from different celebrity personas powered by AI.
+                </p>
+
+                {settings.aiWelcome?.enabled && (
+                  <div className="space-y-4 ml-6">
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-2">AI Welcome Channel</label>
+                      <select
+                        value={settings.aiWelcome?.channelId || ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          aiWelcome: { ...settings.aiWelcome, channelId: e.target.value }
+                        })}
+                        className="bg-discord-dark border border-gray-600 rounded-lg px-4 py-2 w-full max-w-md"
+                      >
+                        <option value="">Select a channel...</option>
+                        {discordChannels.map(channel => (
+                          <option key={channel.id} value={channel.id}>#{channel.name}</option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">Channel where AI welcome messages will be sent</p>
+                    </div>
+
+                    <div className="bg-discord-dark p-4 rounded-lg">
+                      <p className="text-sm text-gray-300 mb-2">Celebrity Personas Include:</p>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {['Morgan Freeman', 'Snoop Dogg', 'Gordon Ramsay', 'David Attenborough', 'Oprah Winfrey', 'Bob Ross', 'The Rock', 'Steve Irwin', 'Mr. Rogers', 'Keanu Reeves'].map(celeb => (
+                          <span key={celeb} className="px-2 py-1 bg-discord-darker rounded text-gray-400">{celeb}</span>
+                        ))}
+                        <span className="px-2 py-1 bg-discord-darker rounded text-gray-500">...and more!</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Save Button */}
               <div className="border-t border-gray-700 pt-6">
                 <button

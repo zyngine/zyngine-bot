@@ -21,7 +21,13 @@ const guildSchema = new mongoose.Schema({
     message: { type: String, default: 'Welcome to {server}! You have been assigned the {roles} role(s).' },
     channelId: { type: String }
   },
-  
+
+  aiWelcome: {
+    enabled: { type: Boolean, default: false },
+    channelId: { type: String },
+    includeServerInfo: { type: Boolean, default: true }
+  },
+
   roleTiers: [{
     name: { type: String, required: true },
     level: { type: Number, required: true },

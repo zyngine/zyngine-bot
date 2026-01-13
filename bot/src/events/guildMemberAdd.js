@@ -1,13 +1,23 @@
 const { EmbedBuilder } = require('discord.js');
 const { Guild, ActivityLog, UserStats } = require('../schemas');
+const { generateWelcomeMessage } = require('../utils/aiWelcome');
 
 module.exports = {
   name: 'guildMemberAdd',
   async execute(member, client) {
     try {
       const guildConfig = await Guild.findOne({ guildId: member.guild.id });
-      
+
+      // Handle AI Welcome (runs independently of auto-roles)
+      if (guildConfig?.aiWelcome?.enabled && guildConfig.aiWelcome.channelId) {
+        sendAiWelcome(member, guildConfig, client).catch(err => {
+          console.error('AI Welcome error:', err);
+        });
+      }
+
       if (!guildConfig || !guildConfig.autoRoles || guildConfig.autoRoles.length === 0) {
+        // Still update user stats even without auto-roles
+        await updateUserStats(member);
         return;
       }
 
@@ -98,3 +108,46 @@ module.exports = {
     }
   },
 };
+
+async function updateUserStats(member) {
+  await UserStats.findOneAndUpdate(
+    { guildId: member.guild.id, odId: member.id },
+    {
+      $setOnInsert: { guildId: member.guild.id, odId: member.id, messageCount: 0 },
+      $set: { joinedAt: member.joinedAt || new Date() }
+    },
+    { upsert: true }
+  );
+}
+
+async function sendAiWelcome(member, guildConfig, client) {
+  const channel = await client.channels.fetch(guildConfig.aiWelcome.channelId).catch(() => null);
+  if (!channel) {
+    console.log(`AI Welcome channel not found: ${guildConfig.aiWelcome.channelId}`);
+    return;
+  }
+
+  const result = await generateWelcomeMessage(
+    member,
+    member.guild.name,
+    guildConfig.aiWelcome.includeServerInfo ? guildConfig.serverDescription : null
+  );
+
+  if (!result) {
+    console.log('Failed to generate AI welcome message');
+    return;
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#5865F2')
+    .setTitle(`Welcome, ${member.user.username}!`)
+    .setDescription(result.message)
+    .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
+    .setFooter({ text: `Welcomed by ${result.celebrity}`, iconURL: member.guild.iconURL({ dynamic: true }) })
+    .setTimestamp();
+
+  await channel.send({
+    content: `${member}`,
+    embeds: [embed]
+  });
+}
