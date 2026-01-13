@@ -13,6 +13,11 @@ import TagsManager from '@/components/TagsManager';
 import BlacklistManager from '@/components/BlacklistManager';
 import AuditLogs from '@/components/AuditLogs';
 import TicketSearch from '@/components/TicketSearch';
+import ModerationPanel from '@/components/ModerationPanel';
+import LevelingPanel from '@/components/LevelingPanel';
+import StarboardPanel from '@/components/StarboardPanel';
+import GiveawaysPanel from '@/components/GiveawaysPanel';
+import CustomCommandsPanel from '@/components/CustomCommandsPanel';
 import {
   Ticket,
   Users,
@@ -1321,6 +1326,55 @@ export default function GuildDashboard() {
               />
             )}
           </div>
+        )}
+
+        {/* Moderation Tab */}
+        {activeTab === 'moderation' && (
+          <ModerationPanel
+            guildId={params.guildId}
+            channels={discordChannels}
+            roles={discordRoles}
+            onMessage={showMessage}
+          />
+        )}
+
+        {/* Leveling Tab */}
+        {activeTab === 'leveling' && (
+          <LevelingPanel
+            guildId={params.guildId}
+            channels={discordChannels}
+            roles={discordRoles}
+            onMessage={showMessage}
+          />
+        )}
+
+        {/* Starboard Tab */}
+        {activeTab === 'starboard' && (
+          <StarboardPanel
+            guildId={params.guildId}
+            channels={discordChannels}
+            onMessage={showMessage}
+          />
+        )}
+
+        {/* Giveaways Tab */}
+        {activeTab === 'giveaways' && (
+          <GiveawaysPanel
+            guildId={params.guildId}
+            channels={discordChannels}
+            roles={discordRoles}
+            onMessage={showMessage}
+          />
+        )}
+
+        {/* Custom Commands Tab */}
+        {activeTab === 'custom-commands' && (
+          <CustomCommandsPanel
+            guildId={params.guildId}
+            channels={discordChannels}
+            roles={discordRoles}
+            onMessage={showMessage}
+          />
         )}
 
         {/* Settings Tab */}

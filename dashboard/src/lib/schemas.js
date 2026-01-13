@@ -476,6 +476,127 @@ const snippetSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Moderation Case Schema
+const moderationCaseSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  caseNumber: { type: Number, required: true },
+  type: { type: String, enum: ['warn', 'mute', 'unmute', 'kick', 'ban', 'unban', 'timeout', 'untimeout'], required: true },
+  targetId: { type: String, required: true, index: true },
+  targetUsername: { type: String },
+  moderatorId: { type: String, required: true },
+  moderatorUsername: { type: String },
+  reason: { type: String, default: 'No reason provided' },
+  duration: { type: Number },
+  expiresAt: { type: Date },
+  active: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now, index: true }
+});
+
+// Moderation Config Schema
+const moderationConfigSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  enabled: { type: Boolean, default: true },
+  logChannelId: { type: String },
+  muteRoleId: { type: String },
+  autoMod: {
+    enabled: { type: Boolean, default: false },
+    spamDetection: { enabled: { type: Boolean, default: false }, messageLimit: { type: Number, default: 5 }, timeWindow: { type: Number, default: 5 }, action: { type: String, default: 'warn' } },
+    linkFilter: { enabled: { type: Boolean, default: false }, whitelist: [String], action: { type: String, default: 'delete' } },
+    wordFilter: { enabled: { type: Boolean, default: false }, words: [String], action: { type: String, default: 'delete' } }
+  },
+  exemptRoles: [String],
+  exemptChannels: [String],
+  warningThresholds: [{ count: Number, action: String, duration: Number }],
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// Leveling Config Schema
+const levelingConfigSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  enabled: { type: Boolean, default: false },
+  xpPerMessage: { type: Number, default: 15 },
+  xpCooldown: { type: Number, default: 60 },
+  levelUpChannelId: { type: String },
+  levelUpMessage: { type: String, default: 'Congratulations {user}! You reached level {level}!' },
+  stackRoles: { type: Boolean, default: false },
+  roleRewards: [{ level: Number, roleId: String, roleName: String }],
+  exemptChannels: [String],
+  exemptRoles: [String],
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// User Level Schema
+const userLevelSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  odId: { type: String, required: true, index: true },
+  odUsername: { type: String },
+  xp: { type: Number, default: 0 },
+  level: { type: Number, default: 0 },
+  totalXp: { type: Number, default: 0 },
+  messageCount: { type: Number, default: 0 },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// Starboard Config Schema
+const starboardConfigSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  enabled: { type: Boolean, default: false },
+  channelId: { type: String },
+  emoji: { type: String, default: '⭐' },
+  threshold: { type: Number, default: 3 },
+  selfStar: { type: Boolean, default: false },
+  ignoredChannels: [String],
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Starboard Entry Schema
+const starboardEntrySchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  originalMessageId: { type: String, required: true, unique: true },
+  originalChannelId: { type: String, required: true },
+  starboardMessageId: { type: String },
+  authorId: { type: String, required: true },
+  authorUsername: { type: String },
+  starCount: { type: Number, default: 0 },
+  content: { type: String },
+  attachments: [String],
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Giveaway Schema
+const giveawaySchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  channelId: { type: String, required: true },
+  messageId: { type: String, required: true, unique: true },
+  hostId: { type: String, required: true },
+  hostUsername: { type: String },
+  prize: { type: String, required: true },
+  description: { type: String },
+  winnerCount: { type: Number, default: 1 },
+  participants: [String],
+  winners: [String],
+  requiredRoles: [String],
+  endsAt: { type: Date, required: true, index: true },
+  ended: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Custom Command Schema
+const customCommandSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  name: { type: String, required: true },
+  description: { type: String },
+  response: { type: String, required: true },
+  embed: { enabled: { type: Boolean, default: false }, title: String, description: String, color: { type: String, default: '#5865F2' }, footer: String },
+  allowedRoles: [String],
+  cooldown: { type: Number, default: 0 },
+  useCount: { type: Number, default: 0 },
+  createdBy: { type: String },
+  createdAt: { type: Date, default: Date.now }
+});
+
 export const Guild = mongoose.models.Guild || mongoose.model('Guild', guildSchema);
 export const RoleRequest = mongoose.models.RoleRequest || mongoose.model('RoleRequest', roleRequestSchema);
 export const Ticket = mongoose.models.Ticket || mongoose.model('Ticket', ticketSchema);
@@ -491,3 +612,11 @@ export const Blacklist = mongoose.models.Blacklist || mongoose.model('Blacklist'
 export const TicketNote = mongoose.models.TicketNote || mongoose.model('TicketNote', ticketNoteSchema);
 export const ScheduledAction = mongoose.models.ScheduledAction || mongoose.model('ScheduledAction', scheduledActionSchema);
 export const Snippet = mongoose.models.Snippet || mongoose.model('Snippet', snippetSchema);
+export const ModerationCase = mongoose.models.ModerationCase || mongoose.model('ModerationCase', moderationCaseSchema);
+export const ModerationConfig = mongoose.models.ModerationConfig || mongoose.model('ModerationConfig', moderationConfigSchema);
+export const LevelingConfig = mongoose.models.LevelingConfig || mongoose.model('LevelingConfig', levelingConfigSchema);
+export const UserLevel = mongoose.models.UserLevel || mongoose.model('UserLevel', userLevelSchema);
+export const StarboardConfig = mongoose.models.StarboardConfig || mongoose.model('StarboardConfig', starboardConfigSchema);
+export const StarboardEntry = mongoose.models.StarboardEntry || mongoose.model('StarboardEntry', starboardEntrySchema);
+export const Giveaway = mongoose.models.Giveaway || mongoose.model('Giveaway', giveawaySchema);
+export const CustomCommand = mongoose.models.CustomCommand || mongoose.model('CustomCommand', customCommandSchema);
