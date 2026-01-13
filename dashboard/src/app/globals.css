@@ -189,6 +189,12 @@ select.input {
   border: 1px solid rgba(254, 231, 92, 0.3);
 }
 
+.badge-error {
+  background: rgba(237, 66, 69, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(237, 66, 69, 0.3);
+}
+
 /* Sidebar styles */
 .sidebar {
   background: linear-gradient(180deg, rgba(15, 15, 26, 0.95) 0%, rgba(10, 10, 18, 0.98) 100%);
@@ -299,23 +305,51 @@ input[type="checkbox"] {
   accent-color: #5865F2;
 }
 
-/* Toggle switch */
-.toggle {
+/* Toggle switch - button based */
+button.toggle {
   @apply relative w-12 h-6 rounded-full cursor-pointer transition-all duration-300;
   background: rgba(37, 37, 66, 0.8);
 }
 
-.toggle.active {
+button.toggle.active {
   background: linear-gradient(135deg, #5865F2 0%, #4752c4 100%);
 }
 
-.toggle::after {
+button.toggle::after {
   content: '';
   @apply absolute top-1 left-1 w-4 h-4 rounded-full transition-all duration-300;
   background: white;
 }
 
-.toggle.active::after {
+button.toggle.active::after {
+  transform: translateX(24px);
+}
+
+/* Toggle switch - label based with checkbox */
+label.toggle {
+  @apply relative inline-block w-12 h-6 cursor-pointer;
+}
+
+label.toggle input {
+  @apply opacity-0 w-0 h-0;
+}
+
+label.toggle .toggle-slider {
+  @apply absolute inset-0 rounded-full transition-all duration-300;
+  background: rgba(37, 37, 66, 0.8);
+}
+
+label.toggle .toggle-slider::before {
+  content: '';
+  @apply absolute top-1 left-1 w-4 h-4 rounded-full transition-all duration-300;
+  background: white;
+}
+
+label.toggle input:checked + .toggle-slider {
+  background: linear-gradient(135deg, #5865F2 0%, #4752c4 100%);
+}
+
+label.toggle input:checked + .toggle-slider::before {
   transform: translateX(24px);
 }
 
