@@ -62,6 +62,18 @@ export default function LevelingPanel({ guildId, channels, roles, onMessage }) {
       }
     } catch (error) {
       console.error('Error fetching leveling data:', error);
+      // Set default config on error
+      setConfig({
+        enabled: false,
+        xpPerMessage: 15,
+        xpCooldown: 60,
+        levelUpChannelId: null,
+        levelUpMessage: 'Congratulations {user}! You reached level {level}!',
+        roleRewards: [],
+        ignoredChannels: [],
+        ignoredRoles: [],
+        xpMultipliers: []
+      });
     } finally {
       setLoading(false);
     }

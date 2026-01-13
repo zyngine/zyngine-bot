@@ -36,10 +36,35 @@ export default function ModerationPanel({ guildId, channels, roles, onMessage })
         fetch(`/api/guilds/${guildId}/moderation/config`)
       ]);
 
-      if (casesRes.ok) setCases(await casesRes.json());
-      if (configRes.ok) setConfig(await configRes.json());
+      if (casesRes.ok) {
+        const data = await casesRes.json();
+        setCases(data.cases || []);
+      }
+      if (configRes.ok) {
+        const configData = await configRes.json();
+        setConfig(configData || {
+          logChannelId: null,
+          warningThresholds: [],
+          exemptRoles: [],
+          autoMod: { enabled: false }
+        });
+      } else {
+        // Set default config if none exists
+        setConfig({
+          logChannelId: null,
+          warningThresholds: [],
+          exemptRoles: [],
+          autoMod: { enabled: false }
+        });
+      }
     } catch (error) {
       console.error('Failed to fetch moderation data:', error);
+      setConfig({
+        logChannelId: null,
+        warningThresholds: [],
+        exemptRoles: [],
+        autoMod: { enabled: false }
+      });
     } finally {
       setLoading(false);
     }

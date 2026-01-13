@@ -55,6 +55,17 @@ export default function StarboardPanel({ guildId, channels, onMessage }) {
       }
     } catch (error) {
       console.error('Error fetching starboard data:', error);
+      // Set default config on error
+      setConfig({
+        enabled: false,
+        channelId: null,
+        emoji: '⭐',
+        threshold: 3,
+        selfStar: false,
+        ignoredChannels: [],
+        allowNSFW: false,
+        embedColor: '#FFD700'
+      });
     } finally {
       setLoading(false);
     }
