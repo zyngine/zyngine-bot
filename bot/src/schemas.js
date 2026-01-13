@@ -607,7 +607,207 @@ const ticketCounterSchema = new mongoose.Schema({
   count: { type: Number, default: 0 }
 });
 
+// Moderation Case Schema
+const moderationCaseSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  caseNumber: { type: Number, required: true },
+  type: {
+    type: String,
+    enum: ['warn', 'mute', 'unmute', 'kick', 'ban', 'unban', 'timeout', 'untimeout'],
+    required: true
+  },
+  targetId: { type: String, required: true, index: true },
+  targetUsername: { type: String },
+  targetAvatar: { type: String },
+  moderatorId: { type: String, required: true },
+  moderatorUsername: { type: String },
+  reason: { type: String, default: 'No reason provided' },
+  duration: { type: Number }, // Duration in minutes for mutes/timeouts
+  expiresAt: { type: Date },
+  active: { type: Boolean, default: true }, // For mutes/bans that can be reversed
+  createdAt: { type: Date, default: Date.now, index: true }
+});
 
+moderationCaseSchema.index({ guildId: 1, caseNumber: 1 }, { unique: true });
+
+// Moderation Case Counter Schema
+const moderationCaseCounterSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  count: { type: Number, default: 0 }
+});
+
+// Moderation Config Schema
+const moderationConfigSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  enabled: { type: Boolean, default: true },
+  logChannelId: { type: String },
+  muteRoleId: { type: String },
+
+  // Auto-moderation settings
+  autoMod: {
+    enabled: { type: Boolean, default: false },
+    spamDetection: {
+      enabled: { type: Boolean, default: false },
+      messageLimit: { type: Number, default: 5 },
+      timeWindow: { type: Number, default: 5 }, // seconds
+      action: { type: String, enum: ['warn', 'mute', 'kick'], default: 'warn' },
+      muteDuration: { type: Number, default: 10 } // minutes
+    },
+    linkFilter: {
+      enabled: { type: Boolean, default: false },
+      whitelist: [{ type: String }],
+      action: { type: String, enum: ['delete', 'warn', 'mute'], default: 'delete' }
+    },
+    wordFilter: {
+      enabled: { type: Boolean, default: false },
+      words: [{ type: String }],
+      action: { type: String, enum: ['delete', 'warn', 'mute'], default: 'delete' }
+    },
+    mentionSpam: {
+      enabled: { type: Boolean, default: false },
+      limit: { type: Number, default: 5 },
+      action: { type: String, enum: ['warn', 'mute', 'kick'], default: 'warn' }
+    },
+    capsFilter: {
+      enabled: { type: Boolean, default: false },
+      percentage: { type: Number, default: 70 },
+      minLength: { type: Number, default: 10 },
+      action: { type: String, enum: ['delete', 'warn'], default: 'delete' }
+    }
+  },
+
+  // Exempt roles and channels
+  exemptRoles: [{ type: String }],
+  exemptChannels: [{ type: String }],
+
+  // Warning thresholds
+  warningThresholds: [{
+    count: { type: Number, required: true },
+    action: { type: String, enum: ['mute', 'kick', 'ban'], required: true },
+    duration: { type: Number } // For mutes, in minutes
+  }],
+
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// Leveling Schema
+const levelingConfigSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  enabled: { type: Boolean, default: false },
+  xpPerMessage: { type: Number, default: 15 },
+  xpCooldown: { type: Number, default: 60 }, // seconds
+  levelUpChannelId: { type: String },
+  levelUpMessage: { type: String, default: 'Congratulations {user}! You reached level {level}!' },
+  stackRoles: { type: Boolean, default: false }, // Whether to keep lower level roles
+
+  // Role rewards
+  roleRewards: [{
+    level: { type: Number, required: true },
+    roleId: { type: String, required: true },
+    roleName: { type: String }
+  }],
+
+  // Exempt channels
+  exemptChannels: [{ type: String }],
+  exemptRoles: [{ type: String }],
+
+  // Multipliers
+  multiplierRoles: [{
+    roleId: { type: String, required: true },
+    multiplier: { type: Number, default: 1.5 }
+  }],
+
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// User Level Schema
+const userLevelSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  odId: { type: String, required: true, index: true },
+  odUsername: { type: String },
+  xp: { type: Number, default: 0 },
+  level: { type: Number, default: 0 },
+  totalXp: { type: Number, default: 0 },
+  messageCount: { type: Number, default: 0 },
+  lastXpAt: { type: Date },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+userLevelSchema.index({ guildId: 1, odId: 1 }, { unique: true });
+userLevelSchema.index({ guildId: 1, totalXp: -1 }); // For leaderboard
+
+// Starboard Schema
+const starboardConfigSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  enabled: { type: Boolean, default: false },
+  channelId: { type: String },
+  emoji: { type: String, default: '⭐' },
+  threshold: { type: Number, default: 3 },
+  selfStar: { type: Boolean, default: false },
+  ignoredChannels: [{ type: String }],
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Starboard Entry Schema
+const starboardEntrySchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  originalMessageId: { type: String, required: true, unique: true },
+  originalChannelId: { type: String, required: true },
+  starboardMessageId: { type: String },
+  authorId: { type: String, required: true },
+  authorUsername: { type: String },
+  starCount: { type: Number, default: 0 },
+  content: { type: String },
+  attachments: [{ type: String }],
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Giveaway Schema
+const giveawaySchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  channelId: { type: String, required: true },
+  messageId: { type: String, required: true, unique: true },
+  hostId: { type: String, required: true },
+  hostUsername: { type: String },
+  prize: { type: String, required: true },
+  description: { type: String },
+  winnerCount: { type: Number, default: 1 },
+  participants: [{ type: String }],
+  winners: [{ type: String }],
+  requiredRoles: [{ type: String }],
+  requiredLevel: { type: Number, default: 0 },
+  endsAt: { type: Date, required: true, index: true },
+  ended: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Custom Command Schema
+const customCommandSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  name: { type: String, required: true },
+  description: { type: String },
+  response: { type: String, required: true },
+  embed: {
+    enabled: { type: Boolean, default: false },
+    title: { type: String },
+    description: { type: String },
+    color: { type: String, default: '#5865F2' },
+    thumbnail: { type: String },
+    image: { type: String },
+    footer: { type: String }
+  },
+  allowedRoles: [{ type: String }],
+  allowedChannels: [{ type: String }],
+  cooldown: { type: Number, default: 0 }, // seconds
+  useCount: { type: Number, default: 0 },
+  createdBy: { type: String },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+customCommandSchema.index({ guildId: 1, name: 1 }, { unique: true });
 
 module.exports = {
   Guild: mongoose.model('Guild', guildSchema),
@@ -626,5 +826,19 @@ module.exports = {
   Blacklist: mongoose.model('Blacklist', blacklistSchema),
   TicketNote: mongoose.model('TicketNote', ticketNoteSchema),
   ScheduledAction: mongoose.model('ScheduledAction', scheduledActionSchema),
-  Snippet: mongoose.model('Snippet', snippetSchema)
+  Snippet: mongoose.model('Snippet', snippetSchema),
+  // Moderation
+  ModerationCase: mongoose.model('ModerationCase', moderationCaseSchema),
+  ModerationCaseCounter: mongoose.model('ModerationCaseCounter', moderationCaseCounterSchema),
+  ModerationConfig: mongoose.model('ModerationConfig', moderationConfigSchema),
+  // Leveling
+  LevelingConfig: mongoose.model('LevelingConfig', levelingConfigSchema),
+  UserLevel: mongoose.model('UserLevel', userLevelSchema),
+  // Starboard
+  StarboardConfig: mongoose.model('StarboardConfig', starboardConfigSchema),
+  StarboardEntry: mongoose.model('StarboardEntry', starboardEntrySchema),
+  // Giveaways
+  Giveaway: mongoose.model('Giveaway', giveawaySchema),
+  // Custom Commands
+  CustomCommand: mongoose.model('CustomCommand', customCommandSchema)
 };
