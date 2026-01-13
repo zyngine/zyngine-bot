@@ -877,6 +877,70 @@ const applicationSubmissionSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now, index: true }
 });
 
+// Server Logging Configuration Schema
+const loggingConfigSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  enabled: { type: Boolean, default: true },
+
+  channels: {
+    messages: { type: String },
+    members: { type: String },
+    moderation: { type: String },
+    roles: { type: String },
+    channels: { type: String },
+    voice: { type: String },
+    server: { type: String },
+    invites: { type: String },
+    automod: { type: String }
+  },
+
+  events: {
+    messageDelete: { type: Boolean, default: true },
+    messageEdit: { type: Boolean, default: true },
+    messageBulkDelete: { type: Boolean, default: true },
+    memberJoin: { type: Boolean, default: true },
+    memberLeave: { type: Boolean, default: true },
+    memberBan: { type: Boolean, default: true },
+    memberUnban: { type: Boolean, default: true },
+    memberKick: { type: Boolean, default: true },
+    memberTimeout: { type: Boolean, default: true },
+    memberNicknameChange: { type: Boolean, default: true },
+    memberAvatarChange: { type: Boolean, default: false },
+    memberRoleAdd: { type: Boolean, default: true },
+    memberRoleRemove: { type: Boolean, default: true },
+    roleCreate: { type: Boolean, default: true },
+    roleDelete: { type: Boolean, default: true },
+    roleUpdate: { type: Boolean, default: true },
+    channelCreate: { type: Boolean, default: true },
+    channelDelete: { type: Boolean, default: true },
+    channelUpdate: { type: Boolean, default: true },
+    voiceJoin: { type: Boolean, default: true },
+    voiceLeave: { type: Boolean, default: true },
+    voiceMove: { type: Boolean, default: true },
+    voiceMute: { type: Boolean, default: false },
+    voiceDeafen: { type: Boolean, default: false },
+    serverUpdate: { type: Boolean, default: true },
+    emojiCreate: { type: Boolean, default: true },
+    emojiDelete: { type: Boolean, default: true },
+    stickerCreate: { type: Boolean, default: false },
+    stickerDelete: { type: Boolean, default: false },
+    inviteCreate: { type: Boolean, default: true },
+    inviteDelete: { type: Boolean, default: true }
+  },
+
+  ignoredChannels: [{ type: String }],
+  ignoredRoles: [{ type: String }],
+  ignoredUsers: [{ type: String }],
+
+  embedColor: { type: String, default: '#00D4AA' },
+  showTimestamps: { type: Boolean, default: true },
+  showAvatars: { type: Boolean, default: true },
+  compactMode: { type: Boolean, default: false },
+
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
 module.exports = {
   Guild: mongoose.model('Guild', guildSchema),
   RoleRequest: mongoose.model('RoleRequest', roleRequestSchema),
@@ -911,5 +975,7 @@ module.exports = {
   CustomCommand: mongoose.model('CustomCommand', customCommandSchema),
   // Applications
   ApplicationTemplate: mongoose.model('ApplicationTemplate', applicationTemplateSchema),
-  ApplicationSubmission: mongoose.model('ApplicationSubmission', applicationSubmissionSchema)
+  ApplicationSubmission: mongoose.model('ApplicationSubmission', applicationSubmissionSchema),
+  // Logging
+  LoggingConfig: mongoose.model('LoggingConfig', loggingConfigSchema)
 };

@@ -22,15 +22,17 @@ import {
   LogOut,
   HelpCircle,
   FileText,
+  ScrollText,
 } from 'lucide-react';
 
 const menuItems = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'tickets', label: 'Tickets', icon: Ticket },
-  { id: 'applications', label: 'Applications', icon: FileText, badge: 'New' },
+  { id: 'applications', label: 'Applications', icon: FileText },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'staff', label: 'Staff', icon: Users },
   { id: 'moderation', label: 'Moderation', icon: Gavel },
+  { id: 'logging', label: 'Logging', icon: ScrollText, badge: 'New' },
   { id: 'leveling', label: 'Leveling', icon: Trophy },
   { id: 'auto-roles', label: 'Auto Roles', icon: Shield },
   { id: 'starboard', label: 'Starboard', icon: Star },

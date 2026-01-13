@@ -11,12 +11,17 @@ class ZyngineClient extends Client {
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildMessageReactions,
         GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildInvites,
+        GatewayIntentBits.GuildModeration,
+        GatewayIntentBits.GuildEmojisAndStickers,
       ],
       partials: [
         Partials.Message,
         Partials.Channel,
         Partials.Reaction,
         Partials.GuildMember,
+        Partials.User,
       ],
     });
 
@@ -57,7 +62,7 @@ class ZyngineClient extends Client {
 
   async loadEvents() {
     const eventsPath = path.join(__dirname, '..', 'events');
-    
+
     if (!fs.existsSync(eventsPath)) {
       console.warn('Events folder not found');
       return;
@@ -67,15 +72,20 @@ class ZyngineClient extends Client {
 
     for (const file of eventFiles) {
       const filePath = path.join(eventsPath, file);
-      const event = require(filePath);
+      const eventModule = require(filePath);
 
-      if (event.once) {
-        this.once(event.name, (...args) => event.execute(...args, this));
-      } else {
-        this.on(event.name, (...args) => event.execute(...args, this));
+      // Handle array of events (like logging.js)
+      const events = Array.isArray(eventModule) ? eventModule : [eventModule];
+
+      for (const event of events) {
+        if (event.once) {
+          this.once(event.name, (...args) => event.execute(...args, this));
+        } else {
+          this.on(event.name, (...args) => event.execute(...args, this));
+        }
+
+        console.log(`✅ Loaded event: ${event.name}${Array.isArray(eventModule) ? ` (from ${file})` : ''}`);
       }
-
-      console.log(`✅ Loaded event: ${event.name}`);
     }
   }
 

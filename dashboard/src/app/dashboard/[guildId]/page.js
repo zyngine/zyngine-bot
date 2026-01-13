@@ -19,6 +19,7 @@ import StarboardPanel from '@/components/StarboardPanel';
 import GiveawaysPanel from '@/components/GiveawaysPanel';
 import CustomCommandsPanel from '@/components/CustomCommandsPanel';
 import ApplicationsPanel from '@/components/ApplicationsPanel';
+import LoggingPanel from '@/components/LoggingPanel';
 import {
   Ticket,
   Users,
@@ -1381,6 +1382,16 @@ export default function GuildDashboard() {
         {/* Applications Tab */}
         {activeTab === 'applications' && (
           <ApplicationsPanel
+            guildId={params.guildId}
+            channels={discordChannels}
+            roles={discordRoles}
+            onMessage={showMessage}
+          />
+        )}
+
+        {/* Logging Tab */}
+        {activeTab === 'logging' && (
+          <LoggingPanel
             guildId={params.guildId}
             channels={discordChannels}
             roles={discordRoles}

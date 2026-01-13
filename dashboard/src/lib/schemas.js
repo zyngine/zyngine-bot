@@ -687,6 +687,87 @@ const applicationSubmissionSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now, index: true }
 });
 
+// Server Logging Configuration Schema
+const loggingConfigSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  enabled: { type: Boolean, default: true },
+
+  // Channel assignments for different log types
+  channels: {
+    messages: { type: String }, // Message edits/deletes
+    members: { type: String }, // Join/leave/nickname/avatar
+    moderation: { type: String }, // Bans/kicks/timeouts/warns
+    roles: { type: String }, // Role changes
+    channels: { type: String }, // Channel create/delete/update
+    voice: { type: String }, // Voice join/leave/move
+    server: { type: String }, // Server settings changes
+    invites: { type: String }, // Invite create/delete/usage
+    automod: { type: String } // Automod actions
+  },
+
+  // Individual event toggles
+  events: {
+    // Message events
+    messageDelete: { type: Boolean, default: true },
+    messageEdit: { type: Boolean, default: true },
+    messageBulkDelete: { type: Boolean, default: true },
+
+    // Member events
+    memberJoin: { type: Boolean, default: true },
+    memberLeave: { type: Boolean, default: true },
+    memberBan: { type: Boolean, default: true },
+    memberUnban: { type: Boolean, default: true },
+    memberKick: { type: Boolean, default: true },
+    memberTimeout: { type: Boolean, default: true },
+    memberNicknameChange: { type: Boolean, default: true },
+    memberAvatarChange: { type: Boolean, default: false },
+    memberRoleAdd: { type: Boolean, default: true },
+    memberRoleRemove: { type: Boolean, default: true },
+
+    // Role events
+    roleCreate: { type: Boolean, default: true },
+    roleDelete: { type: Boolean, default: true },
+    roleUpdate: { type: Boolean, default: true },
+
+    // Channel events
+    channelCreate: { type: Boolean, default: true },
+    channelDelete: { type: Boolean, default: true },
+    channelUpdate: { type: Boolean, default: true },
+
+    // Voice events
+    voiceJoin: { type: Boolean, default: true },
+    voiceLeave: { type: Boolean, default: true },
+    voiceMove: { type: Boolean, default: true },
+    voiceMute: { type: Boolean, default: false },
+    voiceDeafen: { type: Boolean, default: false },
+
+    // Server events
+    serverUpdate: { type: Boolean, default: true },
+    emojiCreate: { type: Boolean, default: true },
+    emojiDelete: { type: Boolean, default: true },
+    stickerCreate: { type: Boolean, default: false },
+    stickerDelete: { type: Boolean, default: false },
+
+    // Invite events
+    inviteCreate: { type: Boolean, default: true },
+    inviteDelete: { type: Boolean, default: true }
+  },
+
+  // Ignore settings
+  ignoredChannels: [{ type: String }], // Channels to ignore for message logs
+  ignoredRoles: [{ type: String }], // Roles to ignore for all logs
+  ignoredUsers: [{ type: String }], // Users to ignore for all logs
+
+  // Appearance settings
+  embedColor: { type: String, default: '#00D4AA' },
+  showTimestamps: { type: Boolean, default: true },
+  showAvatars: { type: Boolean, default: true },
+  compactMode: { type: Boolean, default: false },
+
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
 export const Guild = mongoose.models.Guild || mongoose.model('Guild', guildSchema);
 export const RoleRequest = mongoose.models.RoleRequest || mongoose.model('RoleRequest', roleRequestSchema);
 export const Ticket = mongoose.models.Ticket || mongoose.model('Ticket', ticketSchema);
@@ -712,3 +793,4 @@ export const Giveaway = mongoose.models.Giveaway || mongoose.model('Giveaway', g
 export const CustomCommand = mongoose.models.CustomCommand || mongoose.model('CustomCommand', customCommandSchema);
 export const ApplicationTemplate = mongoose.models.ApplicationTemplate || mongoose.model('ApplicationTemplate', applicationTemplateSchema);
 export const ApplicationSubmission = mongoose.models.ApplicationSubmission || mongoose.model('ApplicationSubmission', applicationSubmissionSchema);
+export const LoggingConfig = mongoose.models.LoggingConfig || mongoose.model('LoggingConfig', loggingConfigSchema);
