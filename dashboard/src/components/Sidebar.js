@@ -21,19 +21,21 @@ import {
   Wrench,
   LogOut,
   HelpCircle,
+  FileText,
 } from 'lucide-react';
 
 const menuItems = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'tickets', label: 'Tickets', icon: Ticket },
+  { id: 'applications', label: 'Applications', icon: FileText, badge: 'New' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'staff', label: 'Staff', icon: Users },
-  { id: 'moderation', label: 'Moderation', icon: Gavel, badge: 'New' },
-  { id: 'leveling', label: 'Leveling', icon: Trophy, badge: 'New' },
+  { id: 'moderation', label: 'Moderation', icon: Gavel },
+  { id: 'leveling', label: 'Leveling', icon: Trophy },
   { id: 'auto-roles', label: 'Auto Roles', icon: Shield },
-  { id: 'starboard', label: 'Starboard', icon: Star, badge: 'New' },
-  { id: 'giveaways', label: 'Giveaways', icon: Gift, badge: 'New' },
-  { id: 'custom-commands', label: 'Commands', icon: MessageSquare, badge: 'New' },
+  { id: 'starboard', label: 'Starboard', icon: Star },
+  { id: 'giveaways', label: 'Giveaways', icon: Gift },
+  { id: 'custom-commands', label: 'Commands', icon: MessageSquare },
   { id: 'tools', label: 'Tools', icon: Wrench },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];

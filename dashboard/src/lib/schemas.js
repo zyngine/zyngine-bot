@@ -597,6 +597,96 @@ const customCommandSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Application Template Schema - defines the application form
+const applicationTemplateSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  name: { type: String, required: true },
+  description: { type: String },
+  enabled: { type: Boolean, default: true },
+
+  // Questions
+  questions: [{
+    id: { type: String, required: true },
+    label: { type: String, required: true },
+    type: { type: String, enum: ['text', 'paragraph', 'multiple_choice'], default: 'text' },
+    placeholder: { type: String },
+    required: { type: Boolean, default: true },
+    minLength: { type: Number },
+    maxLength: { type: Number },
+    options: [{ type: String }] // For multiple choice questions
+  }],
+
+  // Channels
+  logChannelId: { type: String }, // Where applications are sent for review
+  staffThreads: { type: Boolean, default: false }, // Create threads for discussion
+
+  // Messages
+  completionMessage: { type: String, default: 'Your application has been submitted successfully!' },
+  acceptMessage: { type: String, default: 'Congratulations! Your application has been accepted.' },
+  denyMessage: { type: String, default: 'Unfortunately, your application has been denied.' },
+
+  // Role Requirements
+  requiredRoles: [{ type: String }], // Must have these roles to apply
+  restrictedRoles: [{ type: String }], // Cannot apply with these roles
+  managerRoles: [{ type: String }], // Roles that can accept/deny applications
+  pingRoles: [{ type: String }], // Roles to ping when new application arrives
+
+  // Role Actions
+  acceptRoles: [{ type: String }], // Roles to add on acceptance
+  denyRoles: [{ type: String }], // Roles to add on denial
+  removeRolesOnAccept: [{ type: String }], // Roles to remove on acceptance
+  removeRolesOnDeny: [{ type: String }], // Roles to remove on denial
+
+  // Settings
+  cooldown: { type: Number, default: 0 }, // Cooldown in seconds before reapplying
+  allowReapply: { type: Boolean, default: true }, // Allow reapplying after denial
+  dmOnSubmit: { type: Boolean, default: true }, // DM user on submission
+  dmOnDecision: { type: Boolean, default: true }, // DM user on accept/deny
+
+  createdBy: { type: String },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// Application Submission Schema - stores submitted applications
+const applicationSubmissionSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  applicationId: { type: mongoose.Schema.Types.ObjectId, ref: 'ApplicationTemplate', required: true, index: true },
+  applicationName: { type: String },
+
+  // Applicant info
+  userId: { type: String, required: true, index: true },
+  username: { type: String },
+  userAvatar: { type: String },
+
+  // Responses
+  responses: [{
+    questionId: { type: String, required: true },
+    questionLabel: { type: String },
+    answer: { type: String }
+  }],
+
+  // Status
+  status: {
+    type: String,
+    enum: ['pending', 'accepted', 'denied', 'cancelled'],
+    default: 'pending',
+    index: true
+  },
+
+  // Review info
+  reviewedBy: { type: String },
+  reviewedByUsername: { type: String },
+  reviewedAt: { type: Date },
+  reviewNote: { type: String }, // Staff note on decision
+
+  // Discord message tracking
+  logMessageId: { type: String }, // Message ID in log channel
+  threadId: { type: String }, // Thread ID if staff threads enabled
+
+  createdAt: { type: Date, default: Date.now, index: true }
+});
+
 export const Guild = mongoose.models.Guild || mongoose.model('Guild', guildSchema);
 export const RoleRequest = mongoose.models.RoleRequest || mongoose.model('RoleRequest', roleRequestSchema);
 export const Ticket = mongoose.models.Ticket || mongoose.model('Ticket', ticketSchema);
@@ -620,3 +710,5 @@ export const StarboardConfig = mongoose.models.StarboardConfig || mongoose.model
 export const StarboardEntry = mongoose.models.StarboardEntry || mongoose.model('StarboardEntry', starboardEntrySchema);
 export const Giveaway = mongoose.models.Giveaway || mongoose.model('Giveaway', giveawaySchema);
 export const CustomCommand = mongoose.models.CustomCommand || mongoose.model('CustomCommand', customCommandSchema);
+export const ApplicationTemplate = mongoose.models.ApplicationTemplate || mongoose.model('ApplicationTemplate', applicationTemplateSchema);
+export const ApplicationSubmission = mongoose.models.ApplicationSubmission || mongoose.model('ApplicationSubmission', applicationSubmissionSchema);

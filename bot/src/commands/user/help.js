@@ -9,7 +9,7 @@ module.exports = {
       .setColor(COLORS.PRIMARY)
       .setTitle('🛡️ Zyngine Bot Help')
       .addFields(
-        { name: '👤 User Commands', value: '`/request-role` - Request a role\n`/my-requests` - View your requests\n`/available-roles` - See requestable roles' },
+        { name: '👤 User Commands', value: '`/apply` - Apply for a position\n`/request-role` - Request a role\n`/my-requests` - View your requests\n`/available-roles` - See requestable roles' },
         { name: '🛡️ Moderator Commands', value: '`/approve` - Approve a request\n`/deny` - Deny a request\n`/pending` - View pending requests\n`/role give/remove/temp` - Manage roles' },
         { name: '⚙️ Admin Commands', value: '`/setup-autorole` - Configure auto-roles' }
       )

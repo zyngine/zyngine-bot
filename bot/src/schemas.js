@@ -809,6 +809,74 @@ const customCommandSchema = new mongoose.Schema({
 
 customCommandSchema.index({ guildId: 1, name: 1 }, { unique: true });
 
+// Application Template Schema
+const applicationTemplateSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  name: { type: String, required: true },
+  description: { type: String },
+  enabled: { type: Boolean, default: true },
+  questions: [{
+    id: { type: String, required: true },
+    label: { type: String, required: true },
+    type: { type: String, enum: ['text', 'paragraph', 'multiple_choice'], default: 'text' },
+    placeholder: { type: String },
+    required: { type: Boolean, default: true },
+    minLength: { type: Number },
+    maxLength: { type: Number },
+    options: [{ type: String }]
+  }],
+  logChannelId: { type: String },
+  staffThreads: { type: Boolean, default: false },
+  completionMessage: { type: String, default: 'Your application has been submitted successfully!' },
+  acceptMessage: { type: String, default: 'Congratulations! Your application has been accepted.' },
+  denyMessage: { type: String, default: 'Unfortunately, your application has been denied.' },
+  requiredRoles: [{ type: String }],
+  restrictedRoles: [{ type: String }],
+  managerRoles: [{ type: String }],
+  pingRoles: [{ type: String }],
+  acceptRoles: [{ type: String }],
+  denyRoles: [{ type: String }],
+  removeRolesOnAccept: [{ type: String }],
+  removeRolesOnDeny: [{ type: String }],
+  cooldown: { type: Number, default: 0 },
+  allowReapply: { type: Boolean, default: true },
+  dmOnSubmit: { type: Boolean, default: true },
+  dmOnDecision: { type: Boolean, default: true },
+  createdBy: { type: String },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+applicationTemplateSchema.index({ guildId: 1, name: 1 }, { unique: true });
+
+// Application Submission Schema
+const applicationSubmissionSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  applicationId: { type: mongoose.Schema.Types.ObjectId, ref: 'ApplicationTemplate', required: true, index: true },
+  applicationName: { type: String },
+  userId: { type: String, required: true, index: true },
+  username: { type: String },
+  userAvatar: { type: String },
+  responses: [{
+    questionId: { type: String, required: true },
+    questionLabel: { type: String },
+    answer: { type: String }
+  }],
+  status: {
+    type: String,
+    enum: ['pending', 'accepted', 'denied', 'cancelled'],
+    default: 'pending',
+    index: true
+  },
+  reviewedBy: { type: String },
+  reviewedByUsername: { type: String },
+  reviewedAt: { type: Date },
+  reviewNote: { type: String },
+  logMessageId: { type: String },
+  threadId: { type: String },
+  createdAt: { type: Date, default: Date.now, index: true }
+});
+
 module.exports = {
   Guild: mongoose.model('Guild', guildSchema),
   RoleRequest: mongoose.model('RoleRequest', roleRequestSchema),
@@ -840,5 +908,8 @@ module.exports = {
   // Giveaways
   Giveaway: mongoose.model('Giveaway', giveawaySchema),
   // Custom Commands
-  CustomCommand: mongoose.model('CustomCommand', customCommandSchema)
+  CustomCommand: mongoose.model('CustomCommand', customCommandSchema),
+  // Applications
+  ApplicationTemplate: mongoose.model('ApplicationTemplate', applicationTemplateSchema),
+  ApplicationSubmission: mongoose.model('ApplicationSubmission', applicationSubmissionSchema)
 };

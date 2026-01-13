@@ -90,6 +90,13 @@ async function handleButton(interaction, client) {
     await handleTicketButton(interaction);
     return;
   }
+
+  // Handle application buttons (accept/deny)
+  if (customId.startsWith('app_accept_') || customId.startsWith('app_deny_')) {
+    const { handleApplicationButton } = require('../utils/applicationHandler');
+    await handleApplicationButton(interaction);
+    return;
+  }
 }
 
 async function handleSelectMenu(interaction, client) {
@@ -101,6 +108,13 @@ async function handleSelectMenu(interaction, client) {
     await handleTicketDropdown(interaction);
     return;
   }
+
+  // Handle application selection
+  if (customId === 'application_select') {
+    const { handleApplicationSelect } = require('../utils/applicationHandler');
+    await handleApplicationSelect(interaction);
+    return;
+  }
 }
 
 async function handleModalSubmit(interaction, client) {
@@ -110,6 +124,13 @@ async function handleModalSubmit(interaction, client) {
   if (customId.startsWith('ticket_form_')) {
     const { handleTicketFormSubmit } = require('../utils/ticketHandler');
     await handleTicketFormSubmit(interaction);
+    return;
+  }
+
+  // Handle application form submission
+  if (customId.startsWith('application_')) {
+    const { handleApplicationSubmit } = require('../utils/applicationHandler');
+    await handleApplicationSubmit(interaction);
     return;
   }
 }

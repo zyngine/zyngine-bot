@@ -18,6 +18,7 @@ import LevelingPanel from '@/components/LevelingPanel';
 import StarboardPanel from '@/components/StarboardPanel';
 import GiveawaysPanel from '@/components/GiveawaysPanel';
 import CustomCommandsPanel from '@/components/CustomCommandsPanel';
+import ApplicationsPanel from '@/components/ApplicationsPanel';
 import {
   Ticket,
   Users,
@@ -1370,6 +1371,16 @@ export default function GuildDashboard() {
         {/* Custom Commands Tab */}
         {activeTab === 'custom-commands' && (
           <CustomCommandsPanel
+            guildId={params.guildId}
+            channels={discordChannels}
+            roles={discordRoles}
+            onMessage={showMessage}
+          />
+        )}
+
+        {/* Applications Tab */}
+        {activeTab === 'applications' && (
+          <ApplicationsPanel
             guildId={params.guildId}
             channels={discordChannels}
             roles={discordRoles}
