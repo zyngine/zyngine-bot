@@ -31,12 +31,13 @@ export async function GET(request, { params }) {
 
     const channels = await response.json();
 
-    // Filter to text channels only and sort by position
-    const textChannels = channels
-      .filter(channel => channel.type === 0) // 0 = GUILD_TEXT
+    // Filter to text channels and categories, sort by position
+    // Type 0 = GUILD_TEXT, Type 4 = GUILD_CATEGORY
+    const filteredChannels = channels
+      .filter(channel => channel.type === 0 || channel.type === 4)
       .sort((a, b) => a.position - b.position);
 
-    return NextResponse.json(textChannels);
+    return NextResponse.json(filteredChannels);
   } catch (error) {
     console.error('Error fetching Discord channels:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
