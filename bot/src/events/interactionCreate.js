@@ -65,73 +65,118 @@ async function handleCommand(interaction, client) {
 async function handleButton(interaction, client) {
   const customId = interaction.customId;
 
-  // Handle role request buttons
-  if (customId.startsWith('approve_request:') || customId.startsWith('deny_request:')) {
-    const [action, requestId] = customId.split(':');
-    const { handleRequestButton } = require('../utils/requestHandler');
-    await handleRequestButton(interaction, action, requestId);
-    return;
-  }
+  try {
+    // Handle role request buttons
+    if (customId.startsWith('approve_request:') || customId.startsWith('deny_request:')) {
+      const [action, requestId] = customId.split(':');
+      const { handleRequestButton } = require('../utils/requestHandler');
+      await handleRequestButton(interaction, action, requestId);
+      return;
+    }
 
-  // Handle button roles
-  if (customId.startsWith('buttonrole:')) {
-    const [, roleId] = customId.split(':');
-    const { handleButtonRole } = require('../utils/buttonRoleHandler');
-    await handleButtonRole(interaction, roleId);
-    return;
-  }
+    // Handle button roles
+    if (customId.startsWith('buttonrole:')) {
+      const [, roleId] = customId.split(':');
+      const { handleButtonRole } = require('../utils/buttonRoleHandler');
+      await handleButtonRole(interaction, roleId);
+      return;
+    }
 
-  // Handle all ticket-related buttons
-  if (
-    customId.startsWith('ticket_') ||
-    customId.startsWith('feedback_')
-  ) {
-    const { handleTicketButton } = require('../utils/ticketHandler');
-    await handleTicketButton(interaction);
-    return;
-  }
+    // Handle all ticket-related buttons
+    if (
+      customId.startsWith('ticket_') ||
+      customId.startsWith('feedback_')
+    ) {
+      const { handleTicketButton } = require('../utils/ticketHandler');
+      await handleTicketButton(interaction);
+      return;
+    }
 
-  // Handle application buttons (accept/deny)
-  if (customId.startsWith('app_accept_') || customId.startsWith('app_deny_')) {
-    const { handleApplicationButton } = require('../utils/applicationHandler');
-    await handleApplicationButton(interaction);
-    return;
+    // Handle application buttons (accept/deny)
+    if (customId.startsWith('app_accept_') || customId.startsWith('app_deny_')) {
+      const { handleApplicationButton } = require('../utils/applicationHandler');
+      await handleApplicationButton(interaction);
+      return;
+    }
+  } catch (error) {
+    console.error(`Error handling button ${customId}:`, error);
+    const errorEmbed = new EmbedBuilder()
+      .setColor('#F04747')
+      .setTitle('Error')
+      .setDescription('An error occurred while processing this button.')
+      .setTimestamp();
+
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp({ embeds: [errorEmbed], ephemeral: true }).catch(() => {});
+    } else {
+      await interaction.reply({ embeds: [errorEmbed], ephemeral: true }).catch(() => {});
+    }
   }
 }
 
 async function handleSelectMenu(interaction, client) {
   const customId = interaction.customId;
 
-  // Handle ticket dropdown category selection
-  if (customId.startsWith('ticket_dropdown_')) {
-    const { handleTicketDropdown } = require('../utils/ticketHandler');
-    await handleTicketDropdown(interaction);
-    return;
-  }
+  try {
+    // Handle ticket dropdown category selection
+    if (customId.startsWith('ticket_dropdown_')) {
+      const { handleTicketDropdown } = require('../utils/ticketHandler');
+      await handleTicketDropdown(interaction);
+      return;
+    }
 
-  // Handle application selection
-  if (customId === 'application_select') {
-    const { handleApplicationSelect } = require('../utils/applicationHandler');
-    await handleApplicationSelect(interaction);
-    return;
+    // Handle application selection
+    if (customId === 'application_select') {
+      const { handleApplicationSelect } = require('../utils/applicationHandler');
+      await handleApplicationSelect(interaction);
+      return;
+    }
+  } catch (error) {
+    console.error(`Error handling select menu ${customId}:`, error);
+    const errorEmbed = new EmbedBuilder()
+      .setColor('#F04747')
+      .setTitle('Error')
+      .setDescription('An error occurred while processing your selection.')
+      .setTimestamp();
+
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp({ embeds: [errorEmbed], ephemeral: true }).catch(() => {});
+    } else {
+      await interaction.reply({ embeds: [errorEmbed], ephemeral: true }).catch(() => {});
+    }
   }
 }
 
 async function handleModalSubmit(interaction, client) {
   const customId = interaction.customId;
 
-  // Handle ticket form submission
-  if (customId.startsWith('ticket_form_')) {
-    const { handleTicketFormSubmit } = require('../utils/ticketHandler');
-    await handleTicketFormSubmit(interaction);
-    return;
-  }
+  try {
+    // Handle ticket form submission
+    if (customId.startsWith('ticket_form_')) {
+      const { handleTicketFormSubmit } = require('../utils/ticketHandler');
+      await handleTicketFormSubmit(interaction);
+      return;
+    }
 
-  // Handle application form submission
-  if (customId.startsWith('application_')) {
-    const { handleApplicationSubmit } = require('../utils/applicationHandler');
-    await handleApplicationSubmit(interaction);
-    return;
+    // Handle application form submission
+    if (customId.startsWith('application_')) {
+      const { handleApplicationSubmit } = require('../utils/applicationHandler');
+      await handleApplicationSubmit(interaction);
+      return;
+    }
+  } catch (error) {
+    console.error(`Error handling modal ${customId}:`, error);
+    const errorEmbed = new EmbedBuilder()
+      .setColor('#F04747')
+      .setTitle('Error')
+      .setDescription('An error occurred while processing your submission.')
+      .setTimestamp();
+
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp({ embeds: [errorEmbed], ephemeral: true }).catch(() => {});
+    } else {
+      await interaction.reply({ embeds: [errorEmbed], ephemeral: true }).catch(() => {});
+    }
   }
 }
 

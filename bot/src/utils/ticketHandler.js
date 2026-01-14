@@ -1025,7 +1025,10 @@ async function handleTicketButton(interaction) {
 
   // Category button (multi-category)
   if (customId.startsWith('ticket_cat_')) {
-    const [, , panelId, catId] = customId.split('_');
+    // Format: ticket_cat_<panelId>_<catId> where catId may contain underscores
+    const withoutPrefix = customId.slice('ticket_cat_'.length);
+    const panelId = withoutPrefix.slice(0, 24); // MongoDB ObjectId is 24 chars
+    const catId = withoutPrefix.slice(25); // Skip panelId + underscore
     const panel = await TicketPanel.findById(panelId);
 
     if (!panel) {
@@ -1101,9 +1104,10 @@ async function handleTicketFormSubmit(interaction) {
 
   if (!customId.startsWith('ticket_form_')) return;
 
-  const parts = customId.split('_');
-  const panelId = parts[2];
-  const catId = parts[3];
+  // Format: ticket_form_<panelId>_<catId> where catId may contain underscores
+  const withoutPrefix = customId.slice('ticket_form_'.length);
+  const panelId = withoutPrefix.slice(0, 24); // MongoDB ObjectId is 24 chars
+  const catId = withoutPrefix.slice(25); // Skip panelId + underscore
 
   const panel = await TicketPanel.findById(panelId);
   if (!panel) {
