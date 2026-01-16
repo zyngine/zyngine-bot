@@ -126,7 +126,7 @@ async function handleClose(message, ticket, reason, deleteChannel = false) {
   const actionText = deleteChannel ? 'delete' : 'close';
   const confirmMsg = await message.channel.send({
     embeds: [new EmbedBuilder()
-      .setColor(COLORS.warning)
+      .setColor(COLORS.WARNING)
       .setDescription(`Are you sure you want to ${actionText} this ticket?${reason ? `\n**Reason:** ${reason}` : ''}\n\nReact with ✅ to confirm or ❌ to cancel.`)
     ],
     allowedMentions: { repliedUser: false }
@@ -145,7 +145,7 @@ async function handleClose(message, ticket, reason, deleteChannel = false) {
     if (reaction?.emoji.name === '✅') {
       await confirmMsg.edit({
         embeds: [new EmbedBuilder()
-          .setColor(COLORS.info)
+          .setColor(COLORS.INFO)
           .setDescription(`${deleteChannel ? 'Deleting' : 'Closing'} ticket and generating transcript...`)
         ]
       });
@@ -166,7 +166,7 @@ async function handleClose(message, ticket, reason, deleteChannel = false) {
     } else {
       await confirmMsg.edit({
         embeds: [new EmbedBuilder()
-          .setColor(COLORS.error)
+          .setColor(COLORS.ERROR)
           .setDescription('Ticket close cancelled.')
         ]
       });
@@ -175,7 +175,7 @@ async function handleClose(message, ticket, reason, deleteChannel = false) {
   } catch (error) {
     await confirmMsg.edit({
       embeds: [new EmbedBuilder()
-        .setColor(COLORS.error)
+        .setColor(COLORS.ERROR)
         .setDescription('Confirmation timed out. Ticket close cancelled.')
       ]
     });
@@ -584,7 +584,7 @@ async function handleNote(message, ticket, noteContent) {
   // Send confirmation that auto-deletes
   const confirmMsg = await message.channel.send({
     embeds: [new EmbedBuilder()
-      .setColor(COLORS.info)
+      .setColor(COLORS.INFO)
       .setDescription(`📝 Internal note added by ${message.author}`)
       .setFooter({ text: 'This message will be deleted in 5 seconds' })
     ]
@@ -659,7 +659,7 @@ async function handlePing(message, ticket) {
   await message.channel.send({
     content: `<@${ticket.creatorId}>`,
     embeds: [new EmbedBuilder()
-      .setColor(COLORS.info)
+      .setColor(COLORS.INFO)
       .setDescription(`${message.author} is requesting your attention in this ticket.`)
     ]
   });
@@ -696,7 +696,7 @@ async function handleHelp(message, isStaff) {
 
   await message.reply({
     embeds: [new EmbedBuilder()
-      .setColor(COLORS.info)
+      .setColor(COLORS.INFO)
       .setTitle('Ticket Commands')
       .setDescription(isStaff ? staffCommands : userCommands)
       .setFooter({ text: 'All commands start with $' })
