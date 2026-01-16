@@ -547,6 +547,13 @@ async function closeTicket(channel, closedBy, reason = 'No reason provided') {
   }
 
   // DM transcript to user if configured
+  console.log('Transcript DM check:', {
+    hasTranscript: !!transcript,
+    hasPanelTranscripts: !!panel?.transcripts,
+    dmToUser: panel?.transcripts?.dmToUser,
+    panelId: panel?._id
+  });
+
   if (transcript && panel?.transcripts?.dmToUser) {
     try {
       const ticketUser = await channel.guild.members.fetch(ticket.userId);
@@ -557,7 +564,7 @@ async function closeTicket(channel, closedBy, reason = 'No reason provided') {
         .addFields({ name: 'Reason', value: reason })
         .setTimestamp();
 
-      const fileExt = panel.transcripts.format === 'html' ? 'html' : 'txt';
+      const fileExt = panel?.transcripts?.format === 'html' ? 'html' : 'txt';
       await ticketUser.send({
         embeds: [dmEmbed],
         files: [{
@@ -565,8 +572,9 @@ async function closeTicket(channel, closedBy, reason = 'No reason provided') {
           name: `ticket-${ticket.ticketNumber}-transcript.${fileExt}`
         }]
       });
+      console.log('Transcript DM sent successfully to', ticket.userId);
     } catch (err) {
-      // User might have DMs disabled
+      console.error('Error sending transcript DM:', err.message);
     }
   }
 
