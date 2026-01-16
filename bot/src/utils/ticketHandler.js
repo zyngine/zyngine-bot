@@ -26,12 +26,35 @@ async function getNextTicketNumber(guildId) {
 }
 
 /**
+ * Fetch all messages from a channel (handles Discord's 100 message limit)
+ */
+async function fetchAllMessages(channel, maxMessages = 500) {
+  let allMessages = [];
+  let lastMessageId = null;
+
+  while (allMessages.length < maxMessages) {
+    const options = { limit: 100 };
+    if (lastMessageId) options.before = lastMessageId;
+
+    const messages = await channel.messages.fetch(options);
+    if (messages.size === 0) break;
+
+    allMessages.push(...messages.values());
+    lastMessageId = messages.last()?.id;
+
+    if (messages.size < 100) break; // No more messages
+  }
+
+  return allMessages.slice(0, maxMessages);
+}
+
+/**
  * Generate HTML transcript of the ticket channel
  */
 async function generateHtmlTranscript(channel, ticket) {
   try {
-    const messages = await channel.messages.fetch({ limit: 500 });
-    const sortedMessages = [...messages.values()].sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+    const messages = await fetchAllMessages(channel, 500);
+    const sortedMessages = messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
     let html = `<!DOCTYPE html>
 <html lang="en">
