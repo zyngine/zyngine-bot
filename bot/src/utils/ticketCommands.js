@@ -47,8 +47,11 @@ async function handleTicketCommand(message) {
   try {
     switch (command) {
       case 'close':
+        await handleClose(message, ticket, args.join(' '), false);
+        break;
+
       case 'delete':
-        await handleClose(message, ticket, args.join(' '));
+        await handleClose(message, ticket, args.join(' '), true);
         break;
 
       case 'rename':
@@ -113,16 +116,18 @@ async function handleTicketCommand(message) {
 }
 
 /**
- * $close / $delete - Close the ticket with optional reason
+ * $close - Close the ticket with optional reason
+ * $delete - Close and delete the ticket channel
  */
-async function handleClose(message, ticket, reason) {
+async function handleClose(message, ticket, reason, deleteChannel = false) {
   // Delete command message
   await message.delete().catch(() => {});
 
+  const actionText = deleteChannel ? 'delete' : 'close';
   const confirmMsg = await message.channel.send({
     embeds: [new EmbedBuilder()
       .setColor(COLORS.warning)
-      .setDescription(`Are you sure you want to close this ticket?${reason ? `\n**Reason:** ${reason}` : ''}\n\nReact with ✅ to confirm or ❌ to cancel.`)
+      .setDescription(`Are you sure you want to ${actionText} this ticket?${reason ? `\n**Reason:** ${reason}` : ''}\n\nReact with ✅ to confirm or ❌ to cancel.`)
     ],
     allowedMentions: { repliedUser: false }
   });
@@ -141,7 +146,7 @@ async function handleClose(message, ticket, reason) {
       await confirmMsg.edit({
         embeds: [new EmbedBuilder()
           .setColor(COLORS.info)
-          .setDescription('Closing ticket and generating transcript...')
+          .setDescription(`${deleteChannel ? 'Deleting' : 'Closing'} ticket and generating transcript...`)
         ]
       });
 
@@ -150,6 +155,15 @@ async function handleClose(message, ticket, reason) {
 
       // Close the ticket
       await closeTicket(message.channel, ticket, message.author, reason, transcript);
+
+      // Delete the channel if $delete was used
+      if (deleteChannel) {
+        setTimeout(async () => {
+          await message.channel.delete(`Ticket deleted by ${message.author.tag}`).catch(err => {
+            console.error('Error deleting ticket channel:', err);
+          });
+        }, 2000); // Small delay to allow transcript to be sent
+      }
     } else {
       await confirmMsg.edit({
         embeds: [new EmbedBuilder()
@@ -662,7 +676,7 @@ async function handleHelp(message, isStaff) {
   const staffCommands = `
 **Staff Commands:**
 \`$close [reason]\` - Close the ticket with transcript
-\`$delete [reason]\` - Same as $close
+\`$delete [reason]\` - Close and delete the channel
 \`$rename <name>\` - Rename the ticket channel
 \`$add @user\` - Add a user to the ticket
 \`$remove @user\` - Remove a user from the ticket
