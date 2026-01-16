@@ -1,6 +1,6 @@
 const { PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const { Ticket, TicketPanel, TicketNote, ActivityLog } = require('../schemas');
-const { closeTicket, claimTicket, unclaimTicket, generateHtmlTranscript } = require('./ticketHandler');
+const { closeTicket, claimTicket, unclaimTicket } = require('./ticketHandler');
 const { successEmbed, errorEmbed, COLORS } = require('./embeds');
 
 /**
@@ -150,19 +150,18 @@ async function handleClose(message, ticket, reason, deleteChannel = false) {
         ]
       });
 
-      // Generate transcript
-      const transcript = await generateHtmlTranscript(message.channel, ticket);
+      // Close the ticket (generates transcript internally)
+      const result = await closeTicket(message.channel, message.author, reason || 'No reason provided');
 
-      // Close the ticket
-      await closeTicket(message.channel, ticket, message.author, reason, transcript);
-
-      // Delete the channel if $delete was used
-      if (deleteChannel) {
+      // Delete the channel if $delete was used and close was successful
+      if (deleteChannel && result.success && !result.deleted) {
         setTimeout(async () => {
-          await message.channel.delete(`Ticket deleted by ${message.author.tag}`).catch(err => {
+          try {
+            await message.channel.delete(`Ticket deleted by ${message.author.tag}`);
+          } catch (err) {
             console.error('Error deleting ticket channel:', err);
-          });
-        }, 2000); // Small delay to allow transcript to be sent
+          }
+        }, 3000); // Delay to allow transcript to be sent
       }
     } else {
       await confirmMsg.edit({
