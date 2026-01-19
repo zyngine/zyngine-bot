@@ -16,6 +16,40 @@ const guildSchema = new mongoose.Schema({
     minAccountAge: { type: Number, default: 0 }
   }],
 
+  // Boost roles - given when someone boosts the server
+  boostRoles: {
+    enabled: { type: Boolean, default: false },
+    roles: [{ type: String }],
+    message: {
+      enabled: { type: Boolean, default: true },
+      channelId: { type: String },
+      content: { type: String, default: 'Thank you {user} for boosting the server! 🎉' }
+    }
+  },
+
+  // Command roles - prefix commands like $customer
+  commandRoles: [{
+    command: { type: String, required: true },
+    roleId: { type: String, required: true },
+    roleName: { type: String },
+    enabled: { type: Boolean, default: true },
+    allowedRoles: [{ type: String }],
+    staffOnly: { type: Boolean, default: false },
+    selfAssign: { type: Boolean, default: false },
+    removeOnReuse: { type: Boolean, default: false }
+  }],
+
+  // Twitch integration for subscriber roles
+  twitchRoles: {
+    enabled: { type: Boolean, default: false },
+    channelName: { type: String },
+    roles: [{
+      tier: { type: Number },
+      roleId: { type: String },
+      roleName: { type: String }
+    }]
+  },
+
   welcomeMessage: {
     enabled: { type: Boolean, default: false },
     message: { type: String, default: 'Welcome to {server}! You have been assigned the {roles} role(s).' },

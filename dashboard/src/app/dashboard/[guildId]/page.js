@@ -62,6 +62,7 @@ export default function GuildDashboard() {
   // Modal states
   const [showAddAutoRole, setShowAddAutoRole] = useState(false);
   const [showAddTier, setShowAddTier] = useState(false);
+  const [showAddCommandRole, setShowAddCommandRole] = useState(false);
   const [editingAutoRole, setEditingAutoRole] = useState(null);
   const [showPanelBuilder, setShowPanelBuilder] = useState(false);
   const [editingPanel, setEditingPanel] = useState(null);
@@ -75,6 +76,8 @@ export default function GuildDashboard() {
     ignoreBots: true,
     enabled: true
   });
+
+  const [newCommandRole, setNewCommandRole] = useState({});
 
   const [newTier, setNewTier] = useState({
     name: '',
@@ -713,6 +716,295 @@ export default function GuildDashboard() {
                       className="flex-1 btn-primary"
                     >
                       {saving ? 'Adding...' : 'Add Role'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Boost Roles Section */}
+            <div className="card mt-6">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-xl font-semibold">Boost Roles</h2>
+                  <p className="text-sm text-gray-400">Automatically give roles when someone boosts the server</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    const newEnabled = !guild?.boostRoles?.enabled;
+                    try {
+                      const res = await fetch(`/api/guilds/${params.guildId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ boostRoles: { ...guild?.boostRoles, enabled: newEnabled } })
+                      });
+                      if (res.ok) {
+                        setGuild({ ...guild, boostRoles: { ...guild?.boostRoles, enabled: newEnabled } });
+                        showMessage('success', `Boost roles ${newEnabled ? 'enabled' : 'disabled'}`);
+                      }
+                    } catch (error) {
+                      showMessage('error', 'Failed to update');
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-lg ${guild?.boostRoles?.enabled ? 'bg-discord-green' : 'bg-gray-600'}`}
+                >
+                  {guild?.boostRoles?.enabled ? 'Enabled' : 'Disabled'}
+                </button>
+              </div>
+
+              {guild?.boostRoles?.enabled && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Roles to Give Boosters</label>
+                    <select
+                      multiple
+                      value={guild?.boostRoles?.roles || []}
+                      onChange={async (e) => {
+                        const roles = Array.from(e.target.selectedOptions, option => option.value);
+                        try {
+                          const res = await fetch(`/api/guilds/${params.guildId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ boostRoles: { ...guild?.boostRoles, roles } })
+                          });
+                          if (res.ok) {
+                            setGuild({ ...guild, boostRoles: { ...guild?.boostRoles, roles } });
+                          }
+                        } catch (error) {
+                          showMessage('error', 'Failed to update');
+                        }
+                      }}
+                      className="w-full bg-discord-dark border border-gray-600 rounded-lg px-4 py-2 min-h-[100px]"
+                    >
+                      {discordRoles.map(role => (
+                        <option key={role.id} value={role.id}>{role.name}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple roles</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Thank You Message Channel</label>
+                    <select
+                      value={guild?.boostRoles?.message?.channelId || ''}
+                      onChange={async (e) => {
+                        const message = { ...guild?.boostRoles?.message, channelId: e.target.value };
+                        try {
+                          const res = await fetch(`/api/guilds/${params.guildId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ boostRoles: { ...guild?.boostRoles, message } })
+                          });
+                          if (res.ok) {
+                            setGuild({ ...guild, boostRoles: { ...guild?.boostRoles, message } });
+                          }
+                        } catch (error) {
+                          showMessage('error', 'Failed to update');
+                        }
+                      }}
+                      className="w-full bg-discord-dark border border-gray-600 rounded-lg px-4 py-2"
+                    >
+                      <option value="">No message (just give roles)</option>
+                      {discordChannels.filter(c => c.type === 0).map(channel => (
+                        <option key={channel.id} value={channel.id}>#{channel.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Command Roles Section */}
+            <div className="card mt-6">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-xl font-semibold">Command Roles</h2>
+                  <p className="text-sm text-gray-400">Create prefix commands like $customer to give roles</p>
+                </div>
+                <button
+                  onClick={() => setShowAddCommandRole(true)}
+                  className="btn-primary"
+                >
+                  + Add Command
+                </button>
+              </div>
+
+              {guild?.commandRoles?.length > 0 ? (
+                <div className="space-y-3">
+                  {guild.commandRoles.map((cmd, index) => (
+                    <div key={index} className="flex items-center justify-between bg-discord-dark p-4 rounded-lg">
+                      <div className="flex-1">
+                        <p className="font-medium font-mono">${cmd.command}</p>
+                        <p className="text-sm text-gray-400">
+                          Gives: {cmd.roleName || cmd.roleId} |
+                          {cmd.staffOnly ? ' Staff Only' : cmd.selfAssign ? ' Self-Assign' : ' Mention User'} |
+                          {cmd.removeOnReuse ? ' Toggle' : ' Add Only'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={async () => {
+                            const updated = guild.commandRoles.map((c, i) =>
+                              i === index ? { ...c, enabled: !c.enabled } : c
+                            );
+                            try {
+                              const res = await fetch(`/api/guilds/${params.guildId}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ commandRoles: updated })
+                              });
+                              if (res.ok) {
+                                setGuild({ ...guild, commandRoles: updated });
+                              }
+                            } catch (error) {
+                              showMessage('error', 'Failed to update');
+                            }
+                          }}
+                          className={`px-3 py-1 rounded-full text-sm ${
+                            cmd.enabled
+                              ? 'bg-discord-green/20 text-discord-green'
+                              : 'bg-gray-600 text-gray-300'
+                          }`}
+                        >
+                          {cmd.enabled ? 'Enabled' : 'Disabled'}
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const updated = guild.commandRoles.filter((_, i) => i !== index);
+                            try {
+                              const res = await fetch(`/api/guilds/${params.guildId}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ commandRoles: updated })
+                              });
+                              if (res.ok) {
+                                setGuild({ ...guild, commandRoles: updated });
+                                showMessage('success', 'Command deleted');
+                              }
+                            } catch (error) {
+                              showMessage('error', 'Failed to delete');
+                            }
+                          }}
+                          className="text-discord-red hover:bg-discord-red/20 p-2 rounded"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <p>No command roles configured.</p>
+                  <p className="text-sm mt-2">Create commands like <code className="bg-discord-dark px-2 py-1 rounded">$customer</code> to give roles</p>
+                </div>
+              )}
+            </div>
+
+            {/* Add Command Role Modal */}
+            {showAddCommandRole && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-discord-darker p-6 rounded-lg w-full max-w-md">
+                  <h3 className="text-xl font-semibold mb-4">Add Command Role</h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-1">Command (without $)</label>
+                      <input
+                        type="text"
+                        value={newCommandRole.command || ''}
+                        onChange={(e) => setNewCommandRole({ ...newCommandRole, command: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '') })}
+                        className="w-full bg-discord-dark border border-gray-600 rounded-lg px-4 py-2"
+                        placeholder="customer"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Users will type ${newCommandRole.command || 'command'} to use it</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-1">Role to Give</label>
+                      <select
+                        value={newCommandRole.roleId || ''}
+                        onChange={(e) => {
+                          const role = discordRoles.find(r => r.id === e.target.value);
+                          setNewCommandRole({ ...newCommandRole, roleId: e.target.value, roleName: role?.name });
+                        }}
+                        className="w-full bg-discord-dark border border-gray-600 rounded-lg px-4 py-2"
+                      >
+                        <option value="">Select a role...</option>
+                        {discordRoles.map(role => (
+                          <option key={role.id} value={role.id}>{role.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newCommandRole.staffOnly || false}
+                        onChange={(e) => setNewCommandRole({ ...newCommandRole, staffOnly: e.target.checked, selfAssign: false })}
+                        className="w-4 h-4"
+                      />
+                      <label className="text-sm text-gray-400">Staff only (requires Manage Roles)</label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newCommandRole.selfAssign || false}
+                        onChange={(e) => setNewCommandRole({ ...newCommandRole, selfAssign: e.target.checked, staffOnly: false })}
+                        className="w-4 h-4"
+                      />
+                      <label className="text-sm text-gray-400">Allow self-assign (users can give role to themselves)</label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newCommandRole.removeOnReuse || false}
+                        onChange={(e) => setNewCommandRole({ ...newCommandRole, removeOnReuse: e.target.checked })}
+                        className="w-4 h-4"
+                      />
+                      <label className="text-sm text-gray-400">Toggle mode (remove role if user already has it)</label>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={() => {
+                        setShowAddCommandRole(false);
+                        setNewCommandRole({});
+                      }}
+                      className="flex-1 bg-gray-600 hover:bg-gray-500 py-2 rounded-lg transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!newCommandRole.command || !newCommandRole.roleId) {
+                          showMessage('error', 'Please fill in all required fields');
+                          return;
+                        }
+                        try {
+                          const updated = [...(guild?.commandRoles || []), { ...newCommandRole, enabled: true }];
+                          const res = await fetch(`/api/guilds/${params.guildId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ commandRoles: updated })
+                          });
+                          if (res.ok) {
+                            setGuild({ ...guild, commandRoles: updated });
+                            setShowAddCommandRole(false);
+                            setNewCommandRole({});
+                            showMessage('success', 'Command role added');
+                          }
+                        } catch (error) {
+                          showMessage('error', 'Failed to add');
+                        }
+                      }}
+                      disabled={saving}
+                      className="flex-1 btn-primary"
+                    >
+                      Add Command
                     </button>
                   </div>
                 </div>
