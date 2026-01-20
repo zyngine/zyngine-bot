@@ -135,15 +135,47 @@ export default function GuildDashboard() {
       }
 
       // Fetch Discord roles
-      const rolesRes = await fetch(`/api/discord/guilds/${params.guildId}/roles`);
-      if (rolesRes.ok) {
-        setDiscordRoles(await rolesRes.json());
+      try {
+        const rolesRes = await fetch(`/api/discord/guilds/${params.guildId}/roles`);
+        if (rolesRes.ok) {
+          const rolesData = await rolesRes.json();
+          if (Array.isArray(rolesData)) {
+            console.log('Fetched Discord roles:', rolesData.length);
+            setDiscordRoles(rolesData);
+          } else {
+            console.error('Invalid roles data received:', rolesData);
+            setDiscordRoles([]);
+          }
+        } else {
+          const error = await rolesRes.json().catch(() => ({}));
+          console.error('Failed to fetch Discord roles:', rolesRes.status, error);
+          setDiscordRoles([]);
+        }
+      } catch (err) {
+        console.error('Error fetching roles:', err);
+        setDiscordRoles([]);
       }
 
       // Fetch Discord channels
-      const channelsRes = await fetch(`/api/discord/guilds/${params.guildId}/channels`);
-      if (channelsRes.ok) {
-        setDiscordChannels(await channelsRes.json());
+      try {
+        const channelsRes = await fetch(`/api/discord/guilds/${params.guildId}/channels`);
+        if (channelsRes.ok) {
+          const channelsData = await channelsRes.json();
+          if (Array.isArray(channelsData)) {
+            console.log('Fetched Discord channels:', channelsData.length);
+            setDiscordChannels(channelsData);
+          } else {
+            console.error('Invalid channels data received:', channelsData);
+            setDiscordChannels([]);
+          }
+        } else {
+          const error = await channelsRes.json().catch(() => ({}));
+          console.error('Failed to fetch Discord channels:', channelsRes.status, error);
+          setDiscordChannels([]);
+        }
+      } catch (err) {
+        console.error('Error fetching channels:', err);
+        setDiscordChannels([]);
       }
 
       // Fetch tickets
